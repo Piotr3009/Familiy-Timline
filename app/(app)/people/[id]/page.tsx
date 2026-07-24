@@ -29,7 +29,7 @@ import {
   RelationshipsSection,
   type RelationshipItem
 } from '@/components/people/RelationshipsSection';
-import {Card, PersonAvatar} from '@/components/ui';
+import {Alert, Card, PersonAvatar} from '@/components/ui';
 import {EditPersonForm} from '@/components/people/EditPersonForm';
 import {AvatarUpload} from '@/components/people/AvatarUpload';
 import {InvitePanel} from '@/components/invite/InvitePanel';
@@ -300,8 +300,23 @@ export default async function PersonPage({params}: {params: Promise<{id: string}
       : null
   );
 
+  // Read-time adulthood detection (see 20260724000017 for the choice):
+  // a guardian viewing a grown-up, still-unclaimed profile gets nudged
+  // to hand it over via the standard invitation flow below.
+  const showAdultTakeoverBanner =
+    person.user_id === null &&
+    !person.is_deceased &&
+    !personIsMinor &&
+    person.birth_year !== null &&
+    guardedPersonIds.has(person.id);
+
   return (
     <div className="space-y-4">
+      {showAdultTakeoverBanner ? (
+        <Alert tone="info">
+          {t('takeover.adultBanner', {name: person.first_name})}
+        </Alert>
+      ) : null}
       <Card>
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
           <PersonAvatar

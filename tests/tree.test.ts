@@ -26,6 +26,7 @@ function person(id: string, firstName: string, birthYear: number | null): Visibl
     avatar_url: null,
     bio: null,
     life_details_privacy: 'family',
+    takeover_reviewed_at: null,
     created_at: '',
     updated_at: '',
     details_visible: true

@@ -579,5 +579,151 @@ where id = 'a0000000-0000-4000-8000-000000000020';
 update public.persons set life_details_privacy = 'private'
 where id = 'a0000000-0000-4000-8000-000000000020';
 
+-- ============================================================
+-- adulthood transfer (migration 17)
+-- ============================================================
+
+-- u5 will claim Julia (born 2005, adult, unclaimed, guardian-managed).
 reset role;
-select 'stage 2 guardianship + audit + relationship + minor tests passed' as ok;
+insert into auth.users (id, email) values
+  ('d0000000-0000-4000-8000-000000000005', 'julia@test.local');
+
+-- Piotr becomes Julia's guardian and tags her in a family-visible photo
+-- and event, so the review flow has content to hide. (Tags on PRIVATE
+-- items are invisible to the tagged person — nothing to hide there.)
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000007',
+        'a0000000-0000-4000-8000-000000000001',
+        'parent',
+        'd0000000-0000-4000-8000-000000000001');
+
+insert into public.photos (
+  id, family_id, uploaded_by, kind, storage_path_original, file_size_bytes, privacy
+) values (
+  'b0000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000001', 'photo',
+  'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000002/original.jpg',
+  1000, 'family'
+);
+insert into public.events (id, family_id, type, title, event_year, privacy, created_by)
+values ('e0000000-0000-4000-8000-000000000020', 'f0000000-0000-4000-8000-000000000001',
+        'family_gathering', null, 2015, 'family',
+        'd0000000-0000-4000-8000-000000000001');
+
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000007');
+insert into public.event_persons (event_id, person_id)
+values ('e0000000-0000-4000-8000-000000000020', 'a0000000-0000-4000-8000-000000000007');
+
+-- u5 claims Julia's invitation (tok_julia from the minors section).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare v jsonb;
+begin
+  v := public.claim_invitation('tok_julia');
+  if v->>'person_id' <> 'a0000000-0000-4000-8000-000000000007' then
+    raise exception 'TEST: claim returned wrong person';
+  end if;
+end $$;
+
+-- Piotr (guardian + inviter) approves; ownership transfers and ALL
+-- guardianships close (kept as history).
+reset role;
+select set_config('test.inv_julia',
+  (select id::text from public.invitations
+   where person_id = 'a0000000-0000-4000-8000-000000000007'
+     and claim_status = 'pending_approval'), false);
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare v jsonb;
+begin
+  v := public.approve_claim(current_setting('test.inv_julia')::uuid);
+  if v->>'claimed_by' <> 'd0000000-0000-4000-8000-000000000005' then
+    raise exception 'TEST: approve returned wrong claimer';
+  end if;
+end $$;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.persons
+  where id = 'a0000000-0000-4000-8000-000000000007'
+    and user_id = 'd0000000-0000-4000-8000-000000000005';
+  if n <> 1 then raise exception 'TEST: ownership must transfer on approval'; end if;
+  select count(*) into n from public.guardianships
+  where person_id = 'a0000000-0000-4000-8000-000000000007' and ended_at is null;
+  if n <> 0 then raise exception 'TEST: guardianships must close on takeover'; end if;
+  select count(*) into n from public.guardianships
+  where person_id = 'a0000000-0000-4000-8000-000000000007';
+  if n < 1 then raise exception 'TEST: guardianship history must be kept'; end if;
+end $$;
+
+-- The new owner hides herself: removes her own tag and participation
+-- (even on items she cannot edit — they belong to Piotr).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  delete from public.photo_persons
+  where photo_id = 'b0000000-0000-4000-8000-000000000002'
+    and person_id = 'a0000000-0000-4000-8000-000000000007';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'TEST: owner must be able to remove own photo tag'; end if;
+
+  delete from public.event_persons
+  where event_id = 'e0000000-0000-4000-8000-000000000020'
+    and person_id = 'a0000000-0000-4000-8000-000000000007';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'TEST: owner must be able to remove own participation'; end if;
+end $$;
+
+-- …but NOT someone else's tag (Piotr's own tag on his photo).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  delete from public.photo_persons
+  where photo_id = 'b0000000-0000-4000-8000-000000000002'
+    and person_id = 'a0000000-0000-4000-8000-000000000001';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'TEST: removing another person''s tag must be filtered'; end if;
+end $$;
+
+-- Review completion marker is writable by the owner and visible in the
+-- view.
+update public.persons set takeover_reviewed_at = now()
+where id = 'a0000000-0000-4000-8000-000000000007';
+
+do $$
+declare ts timestamptz;
+begin
+  select takeover_reviewed_at into ts from public.visible_persons
+  where id = 'a0000000-0000-4000-8000-000000000007';
+  if ts is null then
+    raise exception 'TEST: takeover_reviewed_at must round-trip through the view';
+  end if;
+end $$;
+
+reset role;
+select 'stage 2 guardianship + audit + relationship + minor + takeover tests passed' as ok;

@@ -497,5 +497,23 @@
       "notAllowed": "Tylko opiekunowie mogą zarządzać opiekunami tego profilu.",
       "alreadyGuardian": "Ta osoba jest już aktywnym opiekunem."
     }
+  },
+  "takeover": {
+    "adultBanner": "{name} jest już osobą pełnoletnią — zaproś ją poniżej do przejęcia swojego profilu.",
+    "reviewNudge": "Twój profil był dotąd prowadzony przez opiekunów. Poświęć chwilę, aby przejrzeć, co się na nim znajduje.",
+    "reviewNudgeAction": "Przejrzyj mój profil",
+    "reviewTitle": "Witaj w swoim profilu",
+    "reviewIntro": "Rodzina prowadziła ten profil dla Ciebie. Oto wszystko, co się na nim znajduje — zachowaj to, co Ci odpowiada, a resztę ukryj. Ukrycie usuwa Cię z danego elementu; sam element zostaje u osoby, która go dodała.",
+    "profileSection": "Twoje dane profilowe",
+    "profileEmpty": "Nie uzupełniono jeszcze żadnych danych.",
+    "profileHint": "Każde pole i jego prywatność możesz zmienić na stronie swojego profilu.",
+    "openProfile": "Otwórz mój profil",
+    "photosSection": "{count, plural, =0 {Zdjęcia z Tobą} one {# zdjęcie z Tobą} few {# zdjęcia z Tobą} other {# zdjęć z Tobą}}",
+    "photosEmpty": "Nie oznaczono Cię na żadnym zdjęciu.",
+    "untitledPhoto": "Zdjęcie bez opisu",
+    "eventsSection": "{count, plural, =0 {Wydarzenia z Tobą} one {# wydarzenie z Tobą} few {# wydarzenia z Tobą} other {# wydarzeń z Tobą}}",
+    "eventsEmpty": "Nie ma wydarzeń z Twoim udziałem.",
+    "hide": "Ukryj mnie",
+    "finish": "Wszystko gra — zakończ przegląd"
   }
 }

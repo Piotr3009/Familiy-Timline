@@ -48,6 +48,20 @@ export default async function DashboardPage() {
 
   const graph = await loadFamilyGraph(supabase, ctx.family.id);
 
+  // Post-takeover review nudge: the user claimed a profile that was
+  // guardian-managed and has not walked through the review screen yet.
+  let showTakeoverReview = false;
+  if (ctx.person && ctx.person.takeover_reviewed_at === null) {
+    const {data: endedGuardianship} = await supabase
+      .from('guardianships')
+      .select('id')
+      .eq('person_id', ctx.person.id)
+      .not('ended_at', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    showTakeoverReview = Boolean(endedGuardianship);
+  }
+
   // Mini tree around me (2–3 generations, no grandparents).
   let miniLayout = null;
   let treeAvatarUrls = new Map<string, string>();
@@ -152,6 +166,15 @@ export default async function DashboardPage() {
       <h1 className="font-heading text-2xl">
         {t('dashboard.greeting', {name: ctx.person?.first_name ?? ''})}
       </h1>
+
+      {showTakeoverReview ? (
+        <div className="rounded-lg border border-amber/30 bg-amber-soft px-4 py-3 text-sm text-amber-strong">
+          {t('takeover.reviewNudge')}{' '}
+          <Link href="/profile-review" className="font-medium underline">
+            {t('takeover.reviewNudgeAction')}
+          </Link>
+        </div>
+      ) : null}
 
       <PendingClaims claims={pendingClaims} />
 

@@ -497,5 +497,23 @@
       "notAllowed": "Only guardians can manage this profile's guardians.",
       "alreadyGuardian": "This person is already an active guardian."
     }
+  },
+  "takeover": {
+    "adultBanner": "{name} is now an adult — invite them below to take over their profile.",
+    "reviewNudge": "Your profile was managed by guardians until now. Take a moment to review what is on it.",
+    "reviewNudgeAction": "Review my profile",
+    "reviewTitle": "Welcome to your profile",
+    "reviewIntro": "Your family kept this profile for you. Here is everything on it — keep what you like, hide what you don't. Hiding removes you from the item; the item itself stays with the person who added it.",
+    "profileSection": "Your profile details",
+    "profileEmpty": "No details have been filled in yet.",
+    "profileHint": "You can edit every field and its privacy on your profile page.",
+    "openProfile": "Open my profile",
+    "photosSection": "{count, plural, =0 {Photos of you} one {# photo of you} other {# photos of you}}",
+    "photosEmpty": "You are not tagged in any photos.",
+    "untitledPhoto": "Untitled photo",
+    "eventsSection": "{count, plural, =0 {Events with you} one {# event with you} other {# events with you}}",
+    "eventsEmpty": "You are not part of any events.",
+    "hide": "Hide me",
+    "finish": "Looks good — finish review"
   }
 }

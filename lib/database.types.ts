@@ -96,6 +96,8 @@ type PersonRow = {
   avatar_url: string | null;
   bio: string | null;
   life_details_privacy: PrivacyLevel;
+  /** Set when the owner finished the post-takeover review screen. */
+  takeover_reviewed_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -278,6 +280,7 @@ export type Database = {
           | 'avatar_url'
           | 'bio'
           | 'life_details_privacy'
+          | 'takeover_reviewed_at'
           | 'created_at'
           | 'updated_at'
         >;
