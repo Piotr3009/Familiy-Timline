@@ -50,6 +50,17 @@ export type ReportStatus = 'open' | 'resolved' | 'dismissed';
 export type FamilyRole = 'admin' | 'member';
 export type GuardianshipType = 'parent' | 'legal_guardian';
 export type AuditAction = 'insert' | 'update' | 'delete';
+export type FeedItemType =
+  | 'person_added'
+  | 'person_claimed'
+  | 'photo_added'
+  | 'event_added'
+  | 'relationship_added'
+  | 'relationship_ended'
+  | 'comment_added'
+  | 'birthday_today'
+  | 'anniversary_today';
+export type CommentTarget = 'event' | 'photo';
 
 type ConfigRow = {
   key: string;
@@ -229,6 +240,32 @@ type AuditLogRow = {
   created_at: string;
 };
 
+type FeedItemRow = {
+  id: string;
+  family_id: string;
+  type: FeedItemType;
+  actor_user_id: string | null;
+  target_table: string | null;
+  target_id: string | null;
+  payload: Json;
+  created_at: string;
+  updated_at: string;
+};
+
+type CommentRow = {
+  id: string;
+  family_id: string;
+  target_type: CommentTarget;
+  target_id: string;
+  author_user_id: string;
+  body: string;
+  /** Reserved for future threading; the Stage 2 UI ignores it. */
+  parent_id: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 /** visible_persons view: life details are null unless details_visible. */
 type VisiblePersonRow = Omit<PersonRow, 'bio'> & {
   bio: string | null;
@@ -388,6 +425,21 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      feed_items: {
+        Row: FeedItemRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      comments: {
+        Row: CommentRow;
+        Insert: WithOptional<
+          CommentRow,
+          'id' | 'parent_id' | 'deleted_at' | 'created_at' | 'updated_at'
+        >;
+        Update: Partial<Pick<CommentRow, 'body'>>;
+        Relationships: [];
+      };
     };
     Views: {
       visible_persons: {
@@ -468,6 +520,8 @@ export type Database = {
       report_status: ReportStatus;
       family_role: FamilyRole;
       guardianship_type: GuardianshipType;
+      feed_item_type: FeedItemType;
+      comment_target: CommentTarget;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -484,3 +538,5 @@ export type Photo = PhotoRow;
 export type Report = ReportRow;
 export type Guardianship = GuardianshipRow;
 export type AuditLogEntry = AuditLogRow;
+export type FeedItem = FeedItemRow;
+export type Comment = CommentRow;

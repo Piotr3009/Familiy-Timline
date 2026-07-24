@@ -725,5 +725,176 @@ begin
   end if;
 end $$;
 
+-- ============================================================
+-- feed (migration 18) — the leak tests
+-- ============================================================
+
+-- Anna (u2) uploads a PRIVATE photo: a feed item appears for her only.
 reset role;
-select 'stage 2 guardianship + audit + relationship + minor + takeover tests passed' as ok;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+insert into public.photos (
+  id, family_id, uploaded_by, kind, storage_path_original, file_size_bytes, privacy
+) values (
+  'b0000000-0000-4000-8000-000000000010', 'f0000000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000002', 'photo',
+  'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000010/original.jpg',
+  1000, 'private'
+);
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added'
+    and payload -> 'photo_ids' ? 'b0000000-0000-4000-8000-000000000010';
+  if n <> 1 then raise exception 'TEST: uploader must see own private photo feed item'; end if;
+end $$;
+
+-- LEAK TEST: no other member may see that feed item.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where payload -> 'photo_ids' ? 'b0000000-0000-4000-8000-000000000010';
+  if n <> 0 then
+    raise exception 'TEST: private photo produced a visible feed item for another member';
+  end if;
+end $$;
+
+-- Marek (u3) uploads two family-visible photos quickly: ONE batched
+-- item, visible to other members.
+insert into public.photos (
+  id, family_id, uploaded_by, kind, storage_path_original, file_size_bytes, privacy
+) values
+  ('b0000000-0000-4000-8000-000000000011', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000003', 'photo',
+   'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000011/original.jpg',
+   1000, 'family'),
+  ('b0000000-0000-4000-8000-000000000012', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000003', 'photo',
+   'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000012/original.jpg',
+   1000, 'family');
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 1 then raise exception 'TEST: quick uploads must batch into one item, got %', n; end if;
+  select jsonb_array_length(payload -> 'photo_ids') into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 2 then raise exception 'TEST: batch should hold 2 photo ids, got %', n; end if;
+end $$;
+
+-- Other members see the batched item.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 1 then raise exception 'TEST: family photo feed item should be visible'; end if;
+end $$;
+
+-- Private EVENT: feed item only for its creator.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+insert into public.events (id, family_id, type, title, event_year, privacy, created_by)
+values ('e0000000-0000-4000-8000-000000000030', 'f0000000-0000-4000-8000-000000000001',
+        'other', 'Marek private note', 2026, 'private',
+        'd0000000-0000-4000-8000-000000000003');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where target_table = 'events'
+    and target_id = 'e0000000-0000-4000-8000-000000000030';
+  if n <> 0 then
+    raise exception 'TEST: private event produced a visible feed item for another member';
+  end if;
+end $$;
+
+-- person_added and relationship items are visible to family members…
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'person_added'
+    and target_id = 'a0000000-0000-4000-8000-000000000020'; -- Zosia
+  if n <> 1 then raise exception 'TEST: person_added item should be visible to members'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'relationship_ended'
+    and target_id = 'c0000000-0000-4000-8000-000000000003'; -- Jan+Zofia divorce
+  if n <> 1 then raise exception 'TEST: relationship_ended item should exist and be visible'; end if;
+end $$;
+
+-- …but a member of ANOTHER family sees none of this family's feed.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000009', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where family_id = 'f0000000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'TEST: stranger sees % feed items of a foreign family', n; end if;
+end $$;
+
+-- Clients cannot write the feed.
+do $$
+begin
+  begin
+    insert into public.feed_items (family_id, type)
+    values ('f0000000-0000-4000-8000-000000000001', 'person_added');
+    raise exception 'TEST: direct feed insert must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Deleting the target removes/empties its feed items.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+delete from public.photos where id in
+  ('b0000000-0000-4000-8000-000000000011', 'b0000000-0000-4000-8000-000000000012');
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 0 then raise exception 'TEST: emptied photo batch must disappear from the feed'; end if;
+end $$;
+
+-- Anon sees nothing.
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items;
+  if n <> 0 then raise exception 'TEST: anon feed items = %, want 0', n; end if;
+end $$;
+
+reset role;
+select 'stage 2 guardianship + audit + relationship + minor + takeover + feed tests passed' as ok;

@@ -515,5 +515,22 @@
     "eventsEmpty": "You are not part of any events.",
     "hide": "Hide me",
     "finish": "Looks good — finish review"
+  },
+  "feed": {
+    "title": "Family activity",
+    "empty": "Nothing here yet — add people, photos and events to bring the feed to life.",
+    "loadMore": "Show older activity",
+    "unknownActor": "Someone",
+    "items": {
+      "person_added": "{actor} added {name} to the tree",
+      "person_claimed": "{name} joined and took over their profile",
+      "photo_added": "{actor} added {count, plural, one {a photo} other {# photos}}",
+      "event_added": "{actor} added the event “{title}”",
+      "relationship_added": "{actor} linked {a} and {b} ({status})",
+      "relationship_ended": "The relationship between {a} and {b} changed to “{status}”",
+      "comment_added": "{actor} commented on “{target}”",
+      "birthday_today": "{hasAge, select, yes {{name} turns {age} today!} other {{name} has a birthday today!}}",
+      "anniversary_today": "{names} celebrate their anniversary today"
+    }
   }
 }

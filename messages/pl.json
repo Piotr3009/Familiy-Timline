@@ -515,5 +515,22 @@
     "eventsEmpty": "Nie ma wydarzeń z Twoim udziałem.",
     "hide": "Ukryj mnie",
     "finish": "Wszystko gra — zakończ przegląd"
+  },
+  "feed": {
+    "title": "Życie rodziny",
+    "empty": "Na razie pusto — dodaj osoby, zdjęcia i wydarzenia, a kronika ożyje.",
+    "loadMore": "Pokaż starsze wpisy",
+    "unknownActor": "Ktoś",
+    "items": {
+      "person_added": "{actor} dodał(a) do drzewa: {name}",
+      "person_claimed": "{name} dołączył(a) i przejął (przejęła) swój profil",
+      "photo_added": "{actor} dodał(a) {count, plural, one {zdjęcie} few {# zdjęcia} other {# zdjęć}}",
+      "event_added": "{actor} dodał(a) wydarzenie „{title}”",
+      "relationship_added": "{actor} połączył(a) osoby {a} i {b} ({status})",
+      "relationship_ended": "Związek między {a} i {b} zmienił się na „{status}”",
+      "comment_added": "{actor} skomentował(a) „{target}”",
+      "birthday_today": "{hasAge, select, yes {{name} kończy dziś {age} lat!} other {{name} ma dziś urodziny!}}",
+      "anniversary_today": "{names} świętują dziś rocznicę ślubu"
+    }
   }
 }
