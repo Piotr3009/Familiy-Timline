@@ -1,0 +1,84 @@
+{
+  "app": {
+    "name": "Family Timeline",
+    "tagline": "Żywa historia Twojej rodziny"
+  },
+  "landing": {
+    "pitch": "Jedno prywatne miejsce na drzewo genealogiczne, stare fotografie i związane z nimi historie — tworzone wspólnie i zachowane dla następnych pokoleń.",
+    "inviteOnlyNote": "Family Timeline działa wyłącznie na zaproszenia. Dołączysz dzięki linkowi od kogoś z rodziny albo samodzielnie założysz nową rodzinę."
+  },
+  "common": {
+    "working": "Chwileczkę…",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "back": "Wstecz",
+    "close": "Zamknij",
+    "add": "Dodaj",
+    "optional": "opcjonalnie",
+    "loading": "Wczytywanie…"
+  },
+  "nav": {
+    "dashboard": "Start",
+    "tree": "Drzewo",
+    "timeline": "Oś czasu",
+    "photos": "Zdjęcia",
+    "events": "Wydarzenia",
+    "settings": "Ustawienia"
+  },
+  "auth": {
+    "email": "Adres e-mail",
+    "password": "Hasło",
+    "newPassword": "Nowe hasło",
+    "passwordHint": "Co najmniej 8 znaków.",
+    "signIn": "Zaloguj się",
+    "signInTitle": "Witaj ponownie",
+    "createAccount": "Załóż konto",
+    "registerTitle": "Załóż swoje konto",
+    "registerSubtitle": "Rozpocznij oś czasu swojej rodziny albo dołącz do tej, do której Cię zaproszono.",
+    "continueWithGoogle": "Kontynuuj z Google",
+    "forgotPassword": "Nie pamiętasz hasła?",
+    "forgotTitle": "Zresetuj hasło",
+    "forgotSubtitle": "Wyślemy Ci link do ustawienia nowego hasła.",
+    "sendResetLink": "Wyślij link resetujący",
+    "resetLinkSent": "Jeśli konto z tym adresem istnieje, link resetujący jest już w drodze.",
+    "resetTitle": "Ustaw nowe hasło",
+    "setNewPassword": "Ustaw nowe hasło",
+    "noAccountYet": "Załóż konto",
+    "alreadyHaveAccount": "Mam już konto",
+    "verifyTitle": "Sprawdź swoją skrzynkę",
+    "verifyBody": "Wysłaliśmy Ci link weryfikacyjny. Otwórz go, aby aktywować konto.",
+    "verifyBodyWithEmail": "Wysłaliśmy link weryfikacyjny na adres {email}. Otwórz go, aby aktywować konto.",
+    "verifyHint": "Brak wiadomości po kilku minutach? Zajrzyj do folderu spam.",
+    "errors": {
+      "weakPassword": "Hasło musi mieć co najmniej 8 znaków.",
+      "emailInUse": "Konto z tym adresem już istnieje. Spróbuj się zalogować.",
+      "emailRequired": "Podaj adres e-mail.",
+      "invalidCredentials": "Ten e-mail i hasło do siebie nie pasują.",
+      "emailNotConfirmed": "Najpierw zweryfikuj swój adres e-mail — sprawdź skrzynkę.",
+      "signUpFailed": "Nie udało się utworzyć konta. Spróbuj ponownie.",
+      "resetFailed": "Nie udało się zmienić hasła. Link mógł wygasnąć.",
+      "callbackFailed": "Logowanie nie powiodło się. Spróbuj ponownie."
+    }
+  },
+  "errors": {
+    "unexpected": "Coś poszło nie tak. Spróbuj ponownie.",
+    "rate_limit_exceeded": "Zbyt wiele prób — spróbuj ponownie później.",
+    "invitation_not_found": "Ten link z zaproszeniem jest nieprawidłowy.",
+    "invitation_expired": "Ten link z zaproszeniem wygasł. Poproś kogoś z rodziny o nowy.",
+    "invitation_not_active": "Ten link z zaproszeniem został już wykorzystany.",
+    "invitation_already_claimed": "Ktoś już zgłosił się po ten profil i czeka na zatwierdzenie.",
+    "person_already_claimed": "Ten profil jest już połączony z kontem.",
+    "person_not_found": "Ten profil już nie istnieje.",
+    "person_deceased": "Profili zmarłych członków rodziny nie można przejąć.",
+    "not_a_family_member": "Nie należysz do tej rodziny.",
+    "already_has_profile_in_family": "Masz już profil w tej rodzinie.",
+    "no_pending_claim": "Nie ma zgłoszenia oczekującego na zatwierdzenie.",
+    "not_allowed_to_approve": "Tę decyzję może podjąć tylko osoba zapraszająca, opiekun profilu lub administrator rodziny.",
+    "not_authenticated": "Najpierw się zaloguj.",
+    "media_quota_exceeded": "Osiągnięto limit przesyłanych plików.",
+    "file_size_exceeded": "Ten plik jest za duży.",
+    "video_duration_exceeded": "To wideo jest za długie."
+  }
+}

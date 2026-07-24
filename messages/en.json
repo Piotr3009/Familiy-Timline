@@ -1,0 +1,84 @@
+{
+  "app": {
+    "name": "Family Timeline",
+    "tagline": "A living history of your family"
+  },
+  "landing": {
+    "pitch": "One private place for your family tree, old photographs, and the stories behind them — built together, kept for the next generations.",
+    "inviteOnlyNote": "Family Timeline is invite-only. You join by receiving an invitation link from a family member, or by starting a new family yourself."
+  },
+  "common": {
+    "working": "Please wait…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "close": "Close",
+    "add": "Add",
+    "optional": "optional",
+    "loading": "Loading…"
+  },
+  "nav": {
+    "dashboard": "Home",
+    "tree": "Tree",
+    "timeline": "Timeline",
+    "photos": "Photos",
+    "events": "Events",
+    "settings": "Settings"
+  },
+  "auth": {
+    "email": "Email address",
+    "password": "Password",
+    "newPassword": "New password",
+    "passwordHint": "At least 8 characters.",
+    "signIn": "Sign in",
+    "signInTitle": "Welcome back",
+    "createAccount": "Create account",
+    "registerTitle": "Create your account",
+    "registerSubtitle": "Start your family's timeline or join one you were invited to.",
+    "continueWithGoogle": "Continue with Google",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotSubtitle": "We will email you a link to set a new password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If an account exists for that address, a reset link is on its way.",
+    "resetTitle": "Set a new password",
+    "setNewPassword": "Set new password",
+    "noAccountYet": "Create an account",
+    "alreadyHaveAccount": "I already have an account",
+    "verifyTitle": "Check your inbox",
+    "verifyBody": "We sent you a verification link. Open it to activate your account.",
+    "verifyBodyWithEmail": "We sent a verification link to {email}. Open it to activate your account.",
+    "verifyHint": "No email after a few minutes? Check your spam folder.",
+    "errors": {
+      "weakPassword": "Please choose a password with at least 8 characters.",
+      "emailInUse": "An account with this email already exists. Try signing in.",
+      "emailRequired": "Please enter your email address.",
+      "invalidCredentials": "That email and password combination is not right.",
+      "emailNotConfirmed": "Please verify your email address first — check your inbox.",
+      "signUpFailed": "We could not create the account. Please try again.",
+      "resetFailed": "We could not update the password. The link may have expired.",
+      "callbackFailed": "Signing in did not complete. Please try again."
+    }
+  },
+  "errors": {
+    "unexpected": "Something went wrong. Please try again.",
+    "rate_limit_exceeded": "Too many attempts — please try again later.",
+    "invitation_not_found": "This invitation link is not valid.",
+    "invitation_expired": "This invitation link has expired. Ask your family member to send a new one.",
+    "invitation_not_active": "This invitation link has already been used.",
+    "invitation_already_claimed": "Someone has already claimed this profile and is waiting for approval.",
+    "person_already_claimed": "This profile is already connected to an account.",
+    "person_not_found": "This profile no longer exists.",
+    "person_deceased": "Profiles of deceased family members cannot be claimed.",
+    "not_a_family_member": "You are not a member of this family.",
+    "already_has_profile_in_family": "You already have a profile in this family.",
+    "no_pending_claim": "There is no claim waiting for approval.",
+    "not_allowed_to_approve": "Only the inviter, the profile manager, or a family admin can decide this.",
+    "not_authenticated": "Please sign in first.",
+    "media_quota_exceeded": "You have reached your upload limit.",
+    "file_size_exceeded": "This file is too large.",
+    "video_duration_exceeded": "This video is too long."
+  }
+}
