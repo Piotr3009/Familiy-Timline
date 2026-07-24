@@ -62,6 +62,174 @@
       "callbackFailed": "Signing in did not complete. Please try again."
     }
   },
+  "onboarding": {
+    "welcome": "Welcome!",
+    "step1Title": "Start your family",
+    "step1Subtitle": "Give your family a name and tell us who you are. You can invite everyone else in a moment.",
+    "familyName": "Family name",
+    "familyNamePlaceholder": "e.g. The Kowalski Family",
+    "aboutYou": "About you",
+    "createFamily": "Create my family",
+    "step2Title": "Add your closest family",
+    "step2Subtitle": "Add the people closest to you — parents, partner, siblings, children. Profiles can be claimed by them later.",
+    "membersSoFar": "{count, plural, one {# person in your family} other {# people in your family}}",
+    "addRelativesTitle": "Add a relative",
+    "relativeAdded": "Added! Add another relative or finish below.",
+    "relationTo": "Who is this person to {name}?",
+    "partnerStatus": "Relationship",
+    "secondParent": "Second parent",
+    "secondParentNone": "No second parent",
+    "addRelative": "Add relative",
+    "grandparentsHint": "Grandparents: open a parent's profile later and add their parents there.",
+    "finish": "Go to my family home",
+    "errors": {
+      "familyNameRequired": "Please give your family a name."
+    }
+  },
+  "persons": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "maidenName": "Maiden name",
+    "maidenNameHint": "helps relatives find the right person",
+    "gender": "Gender",
+    "genders": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Other",
+      "unspecified": "Prefer not to say"
+    },
+    "birthDate": "Date of birth",
+    "birthPlace": "Place of birth",
+    "deathDate": "Date of death",
+    "deathPlace": "Place of death",
+    "isDeceased": "This person has passed away",
+    "partialDateHint": "leave day or month empty if unknown",
+    "dateDay": "Day",
+    "dateMonth": "Month",
+    "dateYear": "Year",
+    "dateYearPlaceholder": "yyyy",
+    "errors": {
+      "nameRequired": "First and last name are required.",
+      "nameTooLong": "Names can be at most 100 characters.",
+      "invalidDate": "That date does not look right. Leave unknown parts empty.",
+      "notAllowed": "You cannot edit this profile."
+    },
+    "nee": "née {name}",
+    "thisIsYou": "This is your profile",
+    "age": "{age} years",
+    "showTreeFromHere": "Show tree from this person",
+    "detailsHidden": "Life details are hidden by this person's privacy settings.",
+    "familyOf": "{name}'s family",
+    "parents": "Parents",
+    "partners": "Partner",
+    "siblings": "Siblings",
+    "children": "Children",
+    "noRelativesYet": "No relatives linked yet — add the first one below.",
+    "bio": "About",
+    "lifeDetailsPrivacy": "Who can see life details",
+    "lifeDetailsPrivacyHint": "Names and photo stay visible to the family; this controls dates, places and the story.",
+    "changeAvatar": "Change photo",
+    "avatarUploadFailed": "The photo could not be uploaded. Please try again.",
+    "deleteProfile": "Delete this profile",
+    "deleteConfirm": "Delete this profile and its relationships?"
+  },
+  "privacy": {
+    "private": "Only me",
+    "immediate_family": "Immediate family",
+    "family": "Whole family"
+  },
+  "report": {
+    "reportProfile": "Report this profile",
+    "reasonLabel": "What is wrong?",
+    "submit": "Send report",
+    "submitted": "Thank you — a family admin will take a look.",
+    "errors": {
+      "reasonRequired": "Please describe what is wrong.",
+      "reasonTooLong": "Please keep the report under 2000 characters."
+    }
+  },
+  "relatives": {
+    "mother": "Mother",
+    "father": "Father",
+    "partner": "Partner / spouse",
+    "sister": "Sister",
+    "brother": "Brother",
+    "daughter": "Daughter",
+    "son": "Son"
+  },
+  "relationships": {
+    "statuses": {
+      "partners": "Partners",
+      "married": "Married",
+      "separated": "Separated",
+      "divorced": "Divorced",
+      "former_partner": "Former partners",
+      "widowed": "Widowed"
+    }
+  },
+  "invite": {
+    "invalid": "This invitation link is not valid. Ask your family member to check it or send a new one.",
+    "rateLimited": "Too many attempts from your network — please try again in a little while.",
+    "expired": "This invitation link has expired — but nothing is lost. Ask your family member to send a fresh one.",
+    "revoked": "This invitation link has been replaced by a newer one. Check for a more recent message.",
+    "alreadyConnected": "{name} is already connected to an account.",
+    "waitingForApproval": "Almost there! Your family member still needs to confirm it is really you. We will let you know.",
+    "claimedBySomeone": "Someone has already claimed this profile and is waiting for approval.",
+    "title": "You are invited to {familyName}",
+    "profileCreatedForYou": "This profile was created for you: {name}. Is this you?",
+    "signInToClaim": "Create an account or sign in to claim your profile.",
+    "registerToClaim": "Create account & claim",
+    "loginToClaim": "I already have an account",
+    "isThisYou": "Claim the profile of {name} and take control of your part of the family story.",
+    "claimButton": "Yes, this is me",
+    "claimSubmitted": "Claim sent! Your family member will confirm it is you, and then the profile is yours.",
+    "approvalNote": "For everyone's safety, the person who invited you confirms your claim before the profile is handed over.",
+    "statusLabel": "Invitation:",
+    "statuses": {
+      "pending": "sent, not yet opened",
+      "opened": "opened",
+      "claimed": "claimed",
+      "expired": "expired",
+      "revoked": "replaced"
+    },
+    "validUntil": "valid until {date}",
+    "pendingClaimNote": "Someone claimed this profile — check your home page to approve or reject it.",
+    "created": "Invitation link created. Share it however you like.",
+    "createdAndEmailed": "Invitation created and emailed. You can also share the link directly.",
+    "copyLink": "Copy link",
+    "copied": "Copied!",
+    "share": "Share…",
+    "shareText": "An invitation to join our family on Family Timeline — a profile is waiting for {name}.",
+    "emailLabel": "Send by email",
+    "emailPlaceholder": "their.email@example.com",
+    "emailHint": "Leave empty to only get a link for WhatsApp, Telegram or SMS.",
+    "resend": "Send a new link",
+    "createInvite": "Create invitation",
+    "pendingClaimsTitle": "Waiting for your confirmation",
+    "claimQuestion": "{claimer} says they are {person}. Is that right?",
+    "someone": "Someone",
+    "approve": "Yes, this is them",
+    "reject": "No, reject",
+    "claimApprovedNote": "Approved — the profile now belongs to its owner.",
+    "claimRejectedNote": "Rejected. The invitation link can be re-sent at any time.",
+    "panelTitle": "Invite {name} to claim this profile"
+  },
+  "emails": {
+    "invitation": {
+      "subject": "An invitation to join {familyName}",
+      "heading": "You are invited!",
+      "body": "A profile was created for {personName} in {familyName} on Family Timeline — a private place for your family tree, photos and stories.",
+      "explainer": "Open the invitation to see the profile waiting for you and make it yours.",
+      "cta": "Open my invitation",
+      "expiry": "This link is valid until {date}. If it expires, any family member can send you a new one."
+    },
+    "claimApproved": {
+      "subject": "Your profile is now yours",
+      "heading": "Welcome to the family!",
+      "body": "Your claim was approved — the profile of {personName} now belongs to you. You control what it shows and who can see it.",
+      "cta": "Go to my family"
+    }
+  },
   "errors": {
     "unexpected": "Something went wrong. Please try again.",
     "rate_limit_exceeded": "Too many attempts — please try again later.",

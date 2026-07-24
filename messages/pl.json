@@ -62,6 +62,174 @@
       "callbackFailed": "Logowanie nie powiodło się. Spróbuj ponownie."
     }
   },
+  "onboarding": {
+    "welcome": "Witaj!",
+    "step1Title": "Załóż swoją rodzinę",
+    "step1Subtitle": "Nadaj rodzinie nazwę i opowiedz nam, kim jesteś. Za chwilę zaprosisz pozostałych.",
+    "familyName": "Nazwa rodziny",
+    "familyNamePlaceholder": "np. Rodzina Kowalskich",
+    "aboutYou": "O Tobie",
+    "createFamily": "Utwórz moją rodzinę",
+    "step2Title": "Dodaj najbliższą rodzinę",
+    "step2Subtitle": "Dodaj najbliższe Ci osoby — rodziców, partnera, rodzeństwo, dzieci. Później będą mogły przejąć swoje profile.",
+    "membersSoFar": "{count, plural, one {# osoba w Twojej rodzinie} few {# osoby w Twojej rodzinie} other {# osób w Twojej rodzinie}}",
+    "addRelativesTitle": "Dodaj krewnego",
+    "relativeAdded": "Dodano! Dodaj kolejną osobę albo zakończ poniżej.",
+    "relationTo": "Kim jest ta osoba dla: {name}?",
+    "partnerStatus": "Związek",
+    "secondParent": "Drugi rodzic",
+    "secondParentNone": "Brak drugiego rodzica",
+    "addRelative": "Dodaj krewnego",
+    "grandparentsHint": "Dziadkowie: otwórz później profil rodzica i dodaj tam jego rodziców.",
+    "finish": "Przejdź do strony rodziny",
+    "errors": {
+      "familyNameRequired": "Nadaj swojej rodzinie nazwę."
+    }
+  },
+  "persons": {
+    "firstName": "Imię",
+    "lastName": "Nazwisko",
+    "maidenName": "Nazwisko panieńskie",
+    "maidenNameHint": "pomaga krewnym odnaleźć właściwą osobę",
+    "gender": "Płeć",
+    "genders": {
+      "female": "Kobieta",
+      "male": "Mężczyzna",
+      "other": "Inna",
+      "unspecified": "Wolę nie podawać"
+    },
+    "birthDate": "Data urodzenia",
+    "birthPlace": "Miejsce urodzenia",
+    "deathDate": "Data śmierci",
+    "deathPlace": "Miejsce śmierci",
+    "isDeceased": "Ta osoba nie żyje",
+    "partialDateHint": "zostaw dzień lub miesiąc pusty, jeśli nieznany",
+    "dateDay": "Dzień",
+    "dateMonth": "Miesiąc",
+    "dateYear": "Rok",
+    "dateYearPlaceholder": "rrrr",
+    "errors": {
+      "nameRequired": "Imię i nazwisko są wymagane.",
+      "nameTooLong": "Imię i nazwisko mogą mieć najwyżej 100 znaków.",
+      "invalidDate": "Ta data nie wygląda poprawnie. Zostaw nieznane części puste.",
+      "notAllowed": "Nie możesz edytować tego profilu."
+    },
+    "nee": "z domu {name}",
+    "thisIsYou": "To Twój profil",
+    "age": "{age} l.",
+    "showTreeFromHere": "Pokaż drzewo od tej osoby",
+    "detailsHidden": "Szczegóły życia są ukryte zgodnie z ustawieniami prywatności tej osoby.",
+    "familyOf": "Rodzina: {name}",
+    "parents": "Rodzice",
+    "partners": "Partner",
+    "siblings": "Rodzeństwo",
+    "children": "Dzieci",
+    "noRelativesYet": "Brak powiązanych krewnych — dodaj pierwszego poniżej.",
+    "bio": "O osobie",
+    "lifeDetailsPrivacy": "Kto widzi szczegóły życia",
+    "lifeDetailsPrivacyHint": "Imię, nazwisko i zdjęcie pozostają widoczne dla rodziny; to ustawienie dotyczy dat, miejsc i historii.",
+    "changeAvatar": "Zmień zdjęcie",
+    "avatarUploadFailed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie.",
+    "deleteProfile": "Usuń ten profil",
+    "deleteConfirm": "Usunąć ten profil wraz z jego powiązaniami?"
+  },
+  "privacy": {
+    "private": "Tylko ja",
+    "immediate_family": "Najbliższa rodzina",
+    "family": "Cała rodzina"
+  },
+  "report": {
+    "reportProfile": "Zgłoś ten profil",
+    "reasonLabel": "Co jest nie tak?",
+    "submit": "Wyślij zgłoszenie",
+    "submitted": "Dziękujemy — administrator rodziny się tym zajmie.",
+    "errors": {
+      "reasonRequired": "Opisz, co jest nie tak.",
+      "reasonTooLong": "Zgłoszenie może mieć najwyżej 2000 znaków."
+    }
+  },
+  "relatives": {
+    "mother": "Matka",
+    "father": "Ojciec",
+    "partner": "Partner / małżonek",
+    "sister": "Siostra",
+    "brother": "Brat",
+    "daughter": "Córka",
+    "son": "Syn"
+  },
+  "relationships": {
+    "statuses": {
+      "partners": "Partnerzy",
+      "married": "Małżeństwo",
+      "separated": "W separacji",
+      "divorced": "Po rozwodzie",
+      "former_partner": "Byli partnerzy",
+      "widowed": "Wdowieństwo"
+    }
+  },
+  "invite": {
+    "invalid": "Ten link z zaproszeniem jest nieprawidłowy. Poproś kogoś z rodziny o sprawdzenie lub wysłanie nowego.",
+    "rateLimited": "Zbyt wiele prób z Twojej sieci — spróbuj ponownie za chwilę.",
+    "expired": "Ten link z zaproszeniem wygasł — ale nic straconego. Poproś kogoś z rodziny o nowy.",
+    "revoked": "Ten link został zastąpiony nowszym. Sprawdź, czy nie masz nowszej wiadomości.",
+    "alreadyConnected": "{name} ma już połączone konto.",
+    "waitingForApproval": "Prawie gotowe! Ktoś z rodziny musi jeszcze potwierdzić, że to naprawdę Ty. Damy Ci znać.",
+    "claimedBySomeone": "Ktoś już zgłosił się po ten profil i czeka na zatwierdzenie.",
+    "title": "Zaproszenie do rodziny {familyName}",
+    "profileCreatedForYou": "Ten profil utworzono dla Ciebie: {name}. Czy to Ty?",
+    "signInToClaim": "Załóż konto lub zaloguj się, aby przejąć swój profil.",
+    "registerToClaim": "Załóż konto i przejmij profil",
+    "loginToClaim": "Mam już konto",
+    "isThisYou": "Przejmij profil {name} i zadbaj o swoją część rodzinnej historii.",
+    "claimButton": "Tak, to ja",
+    "claimSubmitted": "Zgłoszenie wysłane! Ktoś z rodziny potwierdzi, że to Ty — a wtedy profil będzie Twój.",
+    "approvalNote": "Dla bezpieczeństwa wszystkich osoba zapraszająca potwierdza Twoje zgłoszenie, zanim profil zostanie przekazany.",
+    "statusLabel": "Zaproszenie:",
+    "statuses": {
+      "pending": "wysłane, jeszcze nieotwarte",
+      "opened": "otwarte",
+      "claimed": "przejęte",
+      "expired": "wygasłe",
+      "revoked": "zastąpione"
+    },
+    "validUntil": "ważne do {date}",
+    "pendingClaimNote": "Ktoś zgłosił się po ten profil — zajrzyj na stronę główną, aby zatwierdzić lub odrzucić.",
+    "created": "Link z zaproszeniem gotowy. Udostępnij go, jak chcesz.",
+    "createdAndEmailed": "Zaproszenie utworzone i wysłane e-mailem. Możesz też udostępnić link bezpośrednio.",
+    "copyLink": "Kopiuj link",
+    "copied": "Skopiowano!",
+    "share": "Udostępnij…",
+    "shareText": "Zaproszenie do naszej rodziny w Family Timeline — profil czeka na: {name}.",
+    "emailLabel": "Wyślij e-mailem",
+    "emailPlaceholder": "ich.email@przyklad.pl",
+    "emailHint": "Zostaw puste, aby otrzymać tylko link do WhatsAppa, Telegrama lub SMS-a.",
+    "resend": "Wyślij nowy link",
+    "createInvite": "Utwórz zaproszenie",
+    "pendingClaimsTitle": "Czeka na Twoje potwierdzenie",
+    "claimQuestion": "{claimer} podaje, że to {person}. Zgadza się?",
+    "someone": "Ktoś",
+    "approve": "Tak, to ta osoba",
+    "reject": "Nie, odrzuć",
+    "claimApprovedNote": "Zatwierdzono — profil należy teraz do właściciela.",
+    "claimRejectedNote": "Odrzucono. Link z zaproszeniem można w każdej chwili wysłać ponownie.",
+    "panelTitle": "Zaproś: {name} — przekaż ten profil"
+  },
+  "emails": {
+    "invitation": {
+      "subject": "Zaproszenie do rodziny {familyName}",
+      "heading": "Masz zaproszenie!",
+      "body": "W rodzinie {familyName} w Family Timeline utworzono profil dla: {personName}. To prywatne miejsce na drzewo genealogiczne, zdjęcia i historie Waszej rodziny.",
+      "explainer": "Otwórz zaproszenie, aby zobaczyć czekający na Ciebie profil i uczynić go swoim.",
+      "cta": "Otwórz moje zaproszenie",
+      "expiry": "Link jest ważny do {date}. Jeśli wygaśnie, każdy członek rodziny może wysłać Ci nowy."
+    },
+    "claimApproved": {
+      "subject": "Twój profil jest już Twój",
+      "heading": "Witaj w rodzinie!",
+      "body": "Twoje zgłoszenie zostało zatwierdzone — profil {personName} należy teraz do Ciebie. Ty decydujesz, co pokazuje i kto może go oglądać.",
+      "cta": "Przejdź do mojej rodziny"
+    }
+  },
   "errors": {
     "unexpected": "Coś poszło nie tak. Spróbuj ponownie.",
     "rate_limit_exceeded": "Zbyt wiele prób — spróbuj ponownie później.",
