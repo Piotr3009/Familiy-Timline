@@ -1,0 +1,24 @@
+# Minimal Supabase CLI config for local development.
+# `supabase start` fills in defaults for anything not set here.
+project_id = "family-timeline"
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+[auth.email]
+# Mirror production: registration requires a verified email address.
+enable_signup = true
+enable_confirmations = true
+
+# Google OAuth — configured in the Supabase dashboard for production.
+# For local testing: flip to true and export SUPABASE_AUTH_GOOGLE_CLIENT_ID
+# and SUPABASE_AUTH_GOOGLE_SECRET before `supabase start`.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
