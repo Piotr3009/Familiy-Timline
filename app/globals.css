@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens — "a modern frame for old photographs".
+ * All colors live here as CSS variables; components only use the
+ * semantic Tailwind theme tokens below. Light is the default theme;
+ * dark mode is activated by adding the `dark` class on <html>.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Base surfaces — warm cream, never sterile white */
+  --color-surface: #faf6ef;
+  --color-surface-raised: #fffdf8;
+  --color-surface-sunken: #f3ede1;
+  --color-border: #e6dcc9;
+  --color-border-strong: #d3c5a9;
+
+  /* Text — warm near-black */
+  --color-ink: #2b2118;
+  --color-ink-muted: #6f6353;
+  --color-ink-faint: #9a8d79;
+
+  /* Accents */
+  --color-amber: #b45309;
+  --color-amber-strong: #92400e;
+  --color-amber-soft: #fdeed7;
+  --color-brown: #7c5c3e;
+  --color-green: #2f6b4f;
+  --color-green-soft: #e2efe7;
+  --color-danger: #b3403a;
+  --color-danger-soft: #fbe9e7;
+
+  /* Timeline / tree lines */
+  --color-line: #cbbda2;
+}
+
+.dark {
+  /* Warm dark tones, not pure black — photos should look gallery-like */
+  --color-surface: #201b16;
+  --color-surface-raised: #2a241d;
+  --color-surface-sunken: #191511;
+  --color-border: #3d352b;
+  --color-border-strong: #55483a;
+
+  --color-ink: #f0e9dd;
+  --color-ink-muted: #b3a68f;
+  --color-ink-faint: #877a67;
+
+  --color-amber: #e8963f;
+  --color-amber-strong: #f2ad63;
+  --color-amber-soft: #3d2c17;
+  --color-brown: #b08b64;
+  --color-green: #6fae8e;
+  --color-green-soft: #22352b;
+  --color-danger: #e07a72;
+  --color-danger-soft: #402320;
+
+  --color-line: #55483a;
+}
+
+@theme inline {
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-ink-faint: var(--color-ink-faint);
+  --color-amber: var(--color-amber);
+  --color-amber-strong: var(--color-amber-strong);
+  --color-amber-soft: var(--color-amber-soft);
+  --color-brown: var(--color-brown);
+  --color-green: var(--color-green);
+  --color-green-soft: var(--color-green-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-line: var(--color-line);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+
+  --radius-card: 1rem;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings and person/family names get the heritage serif */
+.font-heading {
+  font-family: var(--font-serif);
+}
