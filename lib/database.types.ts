@@ -365,15 +365,15 @@ export type Database = {
         Returns: Json;
       };
       create_invitation: {
-        Args: {p_person_id: string; p_token_hash: string; p_email?: string | null};
+        Args: {p_person_id: string; p_token: string; p_email?: string | null};
         Returns: Json;
       };
       get_invitation_by_token: {
-        Args: {p_token_hash: string; p_rate_key?: string};
+        Args: {p_token: string; p_rate_key?: string};
         Returns: Json;
       };
       claim_invitation: {
-        Args: {p_token_hash: string};
+        Args: {p_token: string};
         Returns: Json;
       };
       approve_claim: {

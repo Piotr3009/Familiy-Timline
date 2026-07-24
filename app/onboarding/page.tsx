@@ -21,12 +21,16 @@ export default async function OnboardingPage() {
       .limit(1)
       .maybeSingle();
 
-    return (
-      <main className="mx-auto w-full max-w-md px-4 py-10">
-        <h1 className="font-heading mb-6 text-center text-3xl text-amber">
-          {t('onboarding.welcome')}
-        </h1>
-        {pendingClaim ? (
+    // While a claim is awaiting approval, show ONLY the waiting state.
+    // Offering "create a family" here is a trap: creating one adds a
+    // second membership, and getFamilyContext (which takes the earliest
+    // membership) would then permanently hide the claimed family.
+    if (pendingClaim) {
+      return (
+        <main className="mx-auto w-full max-w-md px-4 py-10">
+          <h1 className="font-heading mb-6 text-center text-3xl text-amber">
+            {t('onboarding.welcome')}
+          </h1>
           <Card>
             <div className="space-y-3 text-center">
               <span aria-hidden className="text-4xl">
@@ -35,10 +39,16 @@ export default async function OnboardingPage() {
               <p className="text-sm text-ink-muted">{t('onboarding.waitingForApproval')}</p>
             </div>
           </Card>
-        ) : null}
-        <div className={pendingClaim ? 'mt-4' : undefined}>
-          <CreateFamilyForm />
-        </div>
+        </main>
+      );
+    }
+
+    return (
+      <main className="mx-auto w-full max-w-md px-4 py-10">
+        <h1 className="font-heading mb-6 text-center text-3xl text-amber">
+          {t('onboarding.welcome')}
+        </h1>
+        <CreateFamilyForm />
       </main>
     );
   }

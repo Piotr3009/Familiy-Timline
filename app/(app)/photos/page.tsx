@@ -103,6 +103,7 @@ export default async function PhotosPage({
               <li key={photo.id}>
                 <Link
                   href={`/photos/${photo.id}`}
+                  aria-label={photo.description || t('photos.openPhoto')}
                   className="group relative block aspect-square overflow-hidden rounded-lg border border-border bg-surface-sunken"
                 >
                   {thumbUrl ? (

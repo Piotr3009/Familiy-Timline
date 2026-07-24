@@ -4,7 +4,8 @@ import {revalidatePath} from 'next/cache';
 import {getLocale, getTranslations} from 'next-intl/server';
 import {createClient} from '@/lib/supabase/server';
 import {createAdminClient} from '@/lib/supabase/admin';
-import {generateInviteToken, hashInviteToken} from '@/lib/invitations/token';
+import {generateInviteToken} from '@/lib/invitations/token';
+import {isLocale} from '@/i18n/config';
 import {dbErrorKey} from '@/lib/errors';
 import {renderBrandedEmail} from '@/emails/layout';
 import {sendEmail} from '@/emails/send';
@@ -24,7 +25,8 @@ function appUrl(): string {
 /**
  * Creates (or re-sends) an invitation for an unclaimed profile.
  * The DB function enforces membership, rate limits and single-active-link
- * semantics; the raw token never touches the database.
+ * semantics; it hashes the token server-side, so the database only ever
+ * stores the hash — the raw token lives only in the invite link.
  */
 export async function createInvitationAction(
   _prev: InviteActionState,
@@ -36,11 +38,10 @@ export async function createInvitationAction(
 
   const supabase = await createClient();
   const token = generateInviteToken();
-  const tokenHash = await hashInviteToken(token);
 
   const {data, error} = await supabase.rpc('create_invitation', {
     p_person_id: personId,
-    p_token_hash: tokenHash,
+    p_token: token,
     p_email: email
   });
   if (error || !data) return {error: dbErrorKey(error)};
@@ -95,8 +96,7 @@ export async function claimInvitationAction(
   if (!token) return {error: 'errors.invitation_not_found'};
 
   const supabase = await createClient();
-  const tokenHash = await hashInviteToken(token);
-  const {error} = await supabase.rpc('claim_invitation', {p_token_hash: tokenHash});
+  const {error} = await supabase.rpc('claim_invitation', {p_token: token});
   if (error) return {error: dbErrorKey(error)};
   return {error: null, claimed: true};
 }
@@ -128,7 +128,13 @@ export async function approveClaimAction(
         .select('first_name, last_name')
         .eq('id', result.person_id)
         .maybeSingle();
-      const locale = await getLocale();
+      // Localize to the RECIPIENT's saved locale (falling back to the
+      // approver's), not the approver's — this email is for the claimer.
+      const recipientLocale = userData.user?.user_metadata?.locale;
+      const locale =
+        typeof recipientLocale === 'string' && isLocale(recipientLocale)
+          ? recipientLocale
+          : await getLocale();
       const t = await getTranslations({locale, namespace: 'emails'});
       const tApp = await getTranslations({locale, namespace: 'app'});
       await sendEmail({

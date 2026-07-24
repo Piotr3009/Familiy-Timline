@@ -117,7 +117,7 @@
     },
     "nee": "née {name}",
     "thisIsYou": "This is your profile",
-    "age": "{age} years",
+    "age": "{age, plural, one {# year} other {# years}}",
     "showTreeFromHere": "Show tree from this person",
     "detailsHidden": "Life details are hidden by this person's privacy settings.",
     "familyOf": "{name}'s family",
@@ -273,7 +273,9 @@
       "imageUnreadable": "This image could not be read. Try a different file.",
       "uploadFailed": "The upload did not complete. Please try again.",
       "notAllowed": "You cannot edit this photo."
-    }
+    },
+    "deleteFailed": "The photo could not be deleted. Please try again.",
+    "openPhoto": "Open photo"
   },
   "timeline": {
     "title": "Family timeline",

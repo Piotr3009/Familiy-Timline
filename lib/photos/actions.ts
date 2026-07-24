@@ -68,16 +68,18 @@ export async function updatePhotoAction(
   const toAdd = taggedIds.filter((id) => !existing.has(id));
   const toRemove = [...existing].filter((id) => !wanted.has(id));
   if (toAdd.length > 0) {
-    await supabase
+    const {error: addError} = await supabase
       .from('photo_persons')
       .insert(toAdd.map((personId) => ({photo_id: photoId, person_id: personId})));
+    if (addError) return {error: 'errors.unexpected'};
   }
   if (toRemove.length > 0) {
-    await supabase
+    const {error: removeError} = await supabase
       .from('photo_persons')
       .delete()
       .eq('photo_id', photoId)
       .in('person_id', toRemove);
+    if (removeError) return {error: 'errors.unexpected'};
   }
 
   revalidatePath(`/photos/${photoId}`);
@@ -85,7 +87,13 @@ export async function updatePhotoAction(
   return {error: null, ok: true};
 }
 
-/** Delete a photo/video: storage objects first, then the row. */
+/**
+ * Delete a photo/video. Storage objects MUST go before the row: the
+ * storage delete policy resolves permission through the photos row, so
+ * once the row is gone the objects can never be removed. If storage
+ * removal fails we therefore abort and keep the row, sending the user
+ * back to retry rather than stranding the files.
+ */
 export async function deletePhotoAction(formData: FormData): Promise<void> {
   const photoId = String(formData.get('photoId') ?? '');
   if (!photoId) return;
@@ -104,9 +112,15 @@ export async function deletePhotoAction(formData: FormData): Promise<void> {
     photo.storage_path_thumb
   ].filter((path): path is string => Boolean(path));
   if (paths.length > 0) {
-    await supabase.storage.from('media').remove(paths);
+    const {error: storageError} = await supabase.storage.from('media').remove(paths);
+    if (storageError) {
+      redirect(`/photos/${photoId}?error=delete`);
+    }
   }
-  await supabase.from('photos').delete().eq('id', photoId);
+  const {error: rowError} = await supabase.from('photos').delete().eq('id', photoId);
+  if (rowError) {
+    redirect(`/photos/${photoId}?error=delete`);
+  }
   revalidatePath('/photos');
   redirect('/photos');
 }

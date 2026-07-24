@@ -191,7 +191,7 @@
     "signInToClaim": "Załóż konto lub zaloguj się, aby przejąć swój profil.",
     "registerToClaim": "Załóż konto i przejmij profil",
     "loginToClaim": "Mam już konto",
-    "isThisYou": "Przejmij profil {name} i zadbaj o swoją część rodzinnej historii.",
+    "isThisYou": "Przejmij ten profil ({name}) i zadbaj o swoją część rodzinnej historii.",
     "claimButton": "Tak, to ja",
     "claimSubmitted": "Zgłoszenie wysłane! Ktoś z rodziny potwierdzi, że to Ty — a wtedy profil będzie Twój.",
     "approvalNote": "Dla bezpieczeństwa wszystkich osoba zapraszająca potwierdza Twoje zgłoszenie, zanim profil zostanie przekazany.",
@@ -273,7 +273,9 @@
       "imageUnreadable": "Nie udało się odczytać tego obrazu. Spróbuj z innym plikiem.",
       "uploadFailed": "Przesyłanie nie powiodło się. Spróbuj ponownie.",
       "notAllowed": "Nie możesz edytować tego zdjęcia."
-    }
+    },
+    "deleteFailed": "Nie udało się usunąć zdjęcia. Spróbuj ponownie.",
+    "openPhoto": "Otwórz zdjęcie"
   },
   "timeline": {
     "title": "Rodzinna oś czasu",

@@ -106,7 +106,7 @@ end $$;
 do $$
 declare n bigint;
 begin
-  select count(*) into n from public.invitations where token_hash = 'hash_anna';
+  select count(*) into n from public.invitations where token_hash = encode(digest('hash_anna', 'sha256'), 'hex');
   if n <> 0 then
     raise exception 'TEST: unrelated user must not see the invitation';
   end if;
@@ -115,7 +115,7 @@ end $$;
 -- …and cannot approve it even if they somehow obtained the id.
 reset role;
 select set_config('test.inv_anna',
-  (select id::text from public.invitations where token_hash = 'hash_anna'), false);
+  (select id::text from public.invitations where token_hash = encode(digest('hash_anna', 'sha256'), 'hex')), false);
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
 set role authenticated;
 
@@ -134,7 +134,7 @@ reset role;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
 set role authenticated;
 
-select public.approve_claim((select id from public.invitations where token_hash = 'hash_anna'));
+select public.approve_claim((select id from public.invitations where token_hash = encode(digest('hash_anna', 'sha256'), 'hex')));
 
 do $$
 declare v_user uuid; v_managed uuid; v_status public.invitation_status;
@@ -144,7 +144,7 @@ begin
   if v_user <> 'd0000000-0000-4000-8000-000000000002' or v_managed is not null then
     raise exception 'TEST: approval must set user_id and clear managed_by';
   end if;
-  select status into v_status from public.invitations where token_hash = 'hash_anna';
+  select status into v_status from public.invitations where token_hash = encode(digest('hash_anna', 'sha256'), 'hex');
   if v_status <> 'claimed' then
     raise exception 'TEST: approved invitation must be claimed, got %', v_status;
   end if;
@@ -192,7 +192,7 @@ select public.create_invitation('a0000000-0000-4000-8000-00000000000a', 'hash_ma
 
 reset role;
 update public.invitations set expires_at = now() - interval '1 day'
-where token_hash = 'hash_marek_1';
+where token_hash = encode(digest('hash_marek_1', 'sha256'), 'hex');
 
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
 set role authenticated;
@@ -224,7 +224,7 @@ do $$
 declare v_status public.invitation_status; v_super uuid;
 begin
   select status, superseded_by into v_status, v_super
-  from public.invitations where token_hash = 'hash_marek_2';
+  from public.invitations where token_hash = encode(digest('hash_marek_2', 'sha256'), 'hex');
   if v_status <> 'revoked' or v_super is null then
     raise exception 'TEST: re-send must revoke and supersede the old link (got %)', v_status;
   end if;
@@ -249,7 +249,7 @@ end $$;
 reset role;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
 set role authenticated;
-select public.approve_claim((select id from public.invitations where token_hash = 'hash_marek_3'));
+select public.approve_claim((select id from public.invitations where token_hash = encode(digest('hash_marek_3', 'sha256'), 'hex')));
 
 -- Rate limiting ------------------------------------------------------
 reset role;

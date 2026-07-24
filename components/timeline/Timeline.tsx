@@ -12,6 +12,7 @@ import {PersonAvatar} from '@/components/ui';
  */
 export async function Timeline({entries}: {entries: TimelineEntry[]}) {
   const t = await getTranslations('events');
+  const tPrivacy = await getTranslations('privacy');
   const groups = groupByYear(entries);
 
   return (
@@ -42,8 +43,7 @@ export async function Timeline({entries}: {entries: TimelineEntry[]}) {
                   <li key={entry.event.id} className="relative pl-10">
                     <span
                       aria-hidden
-                      className="absolute left-[7px] top-3 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 bg-surface-raised"
-                      style={{borderColor: meta.color}}
+                      className={`absolute left-[7px] top-3 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-current bg-surface-raised ${meta.colorClass}`}
                     />
                     <Link
                       href={`/events/${entry.event.id}`}
@@ -61,7 +61,11 @@ export async function Timeline({entries}: {entries: TimelineEntry[]}) {
                           </p>
                         </div>
                         {entry.event.privacy !== 'family' ? (
-                          <span aria-hidden title={entry.event.privacy}>
+                          <span
+                            role="img"
+                            aria-label={tPrivacy(entry.event.privacy)}
+                            title={tPrivacy(entry.event.privacy)}
+                          >
                             🔒
                           </span>
                         ) : null}
