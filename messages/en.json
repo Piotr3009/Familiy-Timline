@@ -270,6 +270,18 @@
       "heading": "Welcome to the family!",
       "body": "Your claim was approved — the profile of {personName} now belongs to you. You control what it shows and who can see it.",
       "cta": "Go to my family"
+    },
+    "invitationClaimed": {
+      "subject": "Someone claimed {personName}'s profile",
+      "heading": "A profile claim awaits your approval",
+      "body": "Someone used an invitation link to claim {personName}'s profile. Please check that it is really them and approve or reject the claim.",
+      "cta": "Review the claim"
+    },
+    "removalRequested": {
+      "subject": "A family member asks you to remove an item",
+      "heading": "Removal request",
+      "body": "{requesterName} reviewed their profile and asks you to remove an item they appear in. Please have a look.",
+      "cta": "Open the item"
     }
   },
   "photos": {
@@ -426,7 +438,11 @@
     "noReports": "No open reports. All is well in the family.",
     "reportHandled": "Report handled.",
     "markResolved": "Mark resolved",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "emailNotifications": "Email notifications",
+    "emailNotificationsHint": "Important updates (profile claims, approvals, removal requests) can also reach you by email. Everything else stays in the app.",
+    "emailNotificationsOn": "On",
+    "emailNotificationsOff": "Off"
   },
   "history": {
     "title": "History",
@@ -517,7 +533,9 @@
     "eventsSection": "{count, plural, =0 {Events with you} one {# event with you} other {# events with you}}",
     "eventsEmpty": "You are not part of any events.",
     "hide": "Hide me",
-    "finish": "Looks good — finish review"
+    "finish": "Looks good — finish review",
+    "requestRemoval": "Ask to remove",
+    "removalRequested": "Request sent"
   },
   "feed": {
     "title": "Family activity",
@@ -547,6 +565,23 @@
       "tooLong": "The comment is too long.",
       "notAllowed": "You cannot comment here.",
       "editWindowOver": "The editing window for this comment has closed."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "You are all caught up.",
+    "markAllRead": "Mark all as read",
+    "bellLabel": "Notifications",
+    "bellLabelUnread": "Notifications, {count} unread",
+    "items": {
+      "invitation_claimed": "Someone claimed {name}'s profile — review and approve it.",
+      "claim_approved": "Your claim was approved — {name}'s profile is now yours.",
+      "tagged_in_photo": "You were tagged in a photo.",
+      "comment_on_your_item": "Someone commented on your item.",
+      "comment_after_you": "There is a new comment where you commented.",
+      "birthday_reminder": "{name} has a birthday today!",
+      "adult_takeover_available": "{name} is now an adult — invite them to take over their profile.",
+      "removal_requested": "{name} asks you to remove an item they appear in."
     }
   }
 }

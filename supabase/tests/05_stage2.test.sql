@@ -1049,5 +1049,214 @@ begin
   end;
 end $$;
 
+-- ============================================================
+-- notifications (migration 20)
+-- ============================================================
+
+-- The Julia claim/approval earlier ran BEFORE migration-20 triggers?
+-- No — triggers exist since migrations run first. Verify both sides:
+-- Piotr (inviter+guardian) got invitation_claimed, u5 got claim_approved.
 reset role;
-select 'stage 2 tests passed (guardianships, audit, relationships, minors, takeover, feed, comments)' as ok;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'invitation_claimed'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000007';
+  if n < 1 then raise exception 'TEST: approver should be notified of the claim'; end if;
+end $$;
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'claim_approved';
+  if n <> 1 then raise exception 'TEST: claimer should be notified of the approval'; end if;
+  -- RLS: u5 sees ONLY their own notifications.
+  select count(*) into n from public.notifications
+  where recipient_user_id <> 'd0000000-0000-4000-8000-000000000005';
+  if n <> 0 then raise exception 'TEST: notifications of other users leaked'; end if;
+end $$;
+
+-- Tag notification: Piotr tags Julia (claimed by u5) in a family photo.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000007');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'tagged_in_photo'
+    and payload ->> 'photo_id' = 'b0000000-0000-4000-8000-000000000002';
+  if n <> 1 then raise exception 'TEST: tagged person should be notified'; end if;
+end $$;
+
+-- Comment notifications: owner + prior commenters, never the author.
+-- The family event e0..20 belongs to Piotr; Anna commented on it before
+-- (comment cc..01, soft-deleted since — prior-commenter logic must skip
+-- deleted comments' authors...  Anna's comment IS deleted, so she is
+-- NOT a prior commenter). u5 comments now → only Piotr is notified.
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000003', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000020',
+        'd0000000-0000-4000-8000-000000000005', 'I remember this!');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'comment_on_your_item'
+    and payload ->> 'comment_id' = 'cc000000-0000-4000-8000-000000000003';
+  if n <> 1 then raise exception 'TEST: item owner should be notified of the comment'; end if;
+end $$;
+
+-- Second commenter (Piotr, the owner) → u5 gets comment_after_you.
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000004', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000020',
+        'd0000000-0000-4000-8000-000000000001', 'Great memories.');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'comment_after_you'
+    and payload ->> 'comment_id' = 'cc000000-0000-4000-8000-000000000004';
+  if n <> 1 then raise exception 'TEST: prior commenter should be notified'; end if;
+end $$;
+
+-- Derived notifications: Piotr guards Zosia (minor -> no takeover
+-- notification) but nobody adult; make him guard an adult to verify.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.persons (id, family_id, managed_by, created_by,
+                            first_name, last_name, birth_year)
+values ('a0000000-0000-4000-8000-000000000021',
+        'f0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'Dorosly', 'Testowy', 1999);
+insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000021',
+        'a0000000-0000-4000-8000-000000000001',
+        'legal_guardian',
+        'd0000000-0000-4000-8000-000000000001');
+
+select public.refresh_derived_notifications();
+-- Idempotent: calling twice must not duplicate.
+select public.refresh_derived_notifications();
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'adult_takeover_available'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000021';
+  if n <> 1 then
+    raise exception 'TEST: guardian of an unclaimed adult should get one takeover notification, got %', n;
+  end if;
+  select count(*) into n from public.notifications
+  where type = 'adult_takeover_available'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000020';
+  if n <> 0 then
+    raise exception 'TEST: minors must not produce takeover notifications';
+  end if;
+end $$;
+
+-- Removal request: u5 asks Piotr to remove the family photo.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare v jsonb;
+begin
+  v := public.request_content_removal('photo', 'b0000000-0000-4000-8000-000000000002');
+  if v ->> 'owner_user_id' <> 'd0000000-0000-4000-8000-000000000001' then
+    raise exception 'TEST: removal request should return the owner';
+  end if;
+  -- Repeat is deduplicated.
+  v := public.request_content_removal('photo', 'b0000000-0000-4000-8000-000000000002');
+end $$;
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'removal_requested';
+  if n <> 1 then
+    raise exception 'TEST: owner should get exactly one removal request, got %', n;
+  end if;
+end $$;
+
+-- Mark-as-read: recipient may set read_at; clients cannot insert.
+update public.notifications set read_at = now()
+where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+  and read_at is null;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and read_at is null;
+  if n <> 0 then raise exception 'TEST: mark-all-read should clear unread'; end if;
+  begin
+    insert into public.notifications (recipient_user_id, type)
+    values ('d0000000-0000-4000-8000-000000000001', 'birthday_reminder');
+    raise exception 'TEST: direct notification insert must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Anon sees nothing.
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications;
+  if n <> 0 then raise exception 'TEST: anon notifications = %, want 0', n; end if;
+end $$;
+
+reset role;
+select 'stage 2 tests passed (guardianships, audit, relationships, minors, takeover, feed, comments, notifications)' as ok;

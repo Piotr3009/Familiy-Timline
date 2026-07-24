@@ -61,6 +61,15 @@ export type FeedItemType =
   | 'birthday_today'
   | 'anniversary_today';
 export type CommentTarget = 'event' | 'photo';
+export type NotificationType =
+  | 'invitation_claimed'
+  | 'claim_approved'
+  | 'tagged_in_photo'
+  | 'comment_on_your_item'
+  | 'comment_after_you'
+  | 'birthday_reminder'
+  | 'adult_takeover_available'
+  | 'removal_requested';
 
 type ConfigRow = {
   key: string;
@@ -266,6 +275,17 @@ type CommentRow = {
   updated_at: string;
 };
 
+type NotificationRow = {
+  id: string;
+  recipient_user_id: string;
+  family_id: string | null;
+  type: NotificationType;
+  payload: Json;
+  dedupe_key: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
 /** visible_persons view: life details are null unless details_visible. */
 type VisiblePersonRow = Omit<PersonRow, 'bio'> & {
   bio: string | null;
@@ -440,6 +460,12 @@ export type Database = {
         Update: Partial<Pick<CommentRow, 'body'>>;
         Relationships: [];
       };
+      notifications: {
+        Row: NotificationRow;
+        Insert: never;
+        Update: Partial<Pick<NotificationRow, 'read_at'>>;
+        Relationships: [];
+      };
     };
     Views: {
       visible_persons: {
@@ -510,6 +536,14 @@ export type Database = {
         Args: {p_comment: string};
         Returns: undefined;
       };
+      refresh_derived_notifications: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      request_content_removal: {
+        Args: {p_target_type: CommentTarget; p_target_id: string};
+        Returns: Json;
+      };
     };
     Enums: {
       gender: Gender;
@@ -526,6 +560,7 @@ export type Database = {
       guardianship_type: GuardianshipType;
       feed_item_type: FeedItemType;
       comment_target: CommentTarget;
+      notification_type: NotificationType;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -544,3 +579,4 @@ export type Guardianship = GuardianshipRow;
 export type AuditLogEntry = AuditLogRow;
 export type FeedItem = FeedItemRow;
 export type Comment = CommentRow;
+export type Notification = NotificationRow;

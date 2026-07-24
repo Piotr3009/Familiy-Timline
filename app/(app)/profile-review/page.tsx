@@ -8,7 +8,7 @@ import {formatPartialDate} from '@/lib/dates';
 import {EVENT_TYPES} from '@/lib/event-types';
 import {finishTakeoverReviewAction} from '@/lib/takeover/actions';
 import {Button, Card} from '@/components/ui';
-import {HideItemButton} from '@/components/takeover/ReviewControls';
+import {HideItemButton, RequestRemovalButton} from '@/components/takeover/ReviewControls';
 
 /**
  * Post-takeover review: after claiming their profile, the new owner
@@ -128,7 +128,10 @@ export default async function ProfileReviewPage() {
                   <span className="min-w-0 flex-1 truncate text-sm text-ink">
                     {photo.description ?? t('takeover.untitledPhoto')}
                   </span>
-                  <HideItemButton kind="photo" targetId={photo.id} />
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <HideItemButton kind="photo" targetId={photo.id} />
+                    <RequestRemovalButton kind="photo" targetId={photo.id} />
+                  </span>
                 </li>
               );
             })}
@@ -163,7 +166,10 @@ export default async function ProfileReviewPage() {
                     })}
                   </span>
                 </Link>
-                <HideItemButton kind="event" targetId={event.id} />
+                <span className="flex shrink-0 flex-col items-end gap-1">
+                  <HideItemButton kind="event" targetId={event.id} />
+                  <RequestRemovalButton kind="event" targetId={event.id} />
+                </span>
               </li>
             ))}
           </ul>

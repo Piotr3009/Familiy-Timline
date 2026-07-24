@@ -74,6 +74,23 @@ export async function setTreePartnerFilterAction(formData: FormData): Promise<vo
   redirect(`/tree?partners=${filter}${focus ? `&focus=${focus}` : ''}`);
 }
 
+/**
+ * Per-user email notification opt-out (default on). Stored in user
+ * metadata like locale/theme; every notification email checks it.
+ */
+export async function setEmailNotificationsAction(formData: FormData): Promise<void> {
+  const enabled = String(formData.get('enabled') ?? '');
+  if (enabled !== 'on' && enabled !== 'off') return;
+  const supabase = await createClient();
+  const {
+    data: {user}
+  } = await supabase.auth.getUser();
+  if (user) {
+    await supabase.auth.updateUser({data: {email_notifications: enabled === 'on'}});
+  }
+  revalidatePath('/settings');
+}
+
 export type ResolveReportState = {error: string | null; ok?: boolean};
 
 export async function resolveReportAction(

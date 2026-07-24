@@ -270,6 +270,18 @@
       "heading": "Witaj w rodzinie!",
       "body": "Twoje zgłoszenie zostało zatwierdzone — profil {personName} należy teraz do Ciebie. Ty decydujesz, co pokazuje i kto może go oglądać.",
       "cta": "Przejdź do mojej rodziny"
+    },
+    "invitationClaimed": {
+      "subject": "Ktoś zgłosił się po profil {personName}",
+      "heading": "Zgłoszenie czeka na Twoją decyzję",
+      "body": "Ktoś skorzystał z linku z zaproszeniem i zgłosił się po profil {personName}. Sprawdź, czy to na pewno ta osoba, i zatwierdź lub odrzuć zgłoszenie.",
+      "cta": "Sprawdź zgłoszenie"
+    },
+    "removalRequested": {
+      "subject": "Ktoś z rodziny prosi o usunięcie elementu",
+      "heading": "Prośba o usunięcie",
+      "body": "{requesterName} przejrzał(a) swój profil i prosi Cię o usunięcie elementu, na którym się znajduje. Zajrzyj, proszę.",
+      "cta": "Otwórz element"
     }
   },
   "photos": {
@@ -426,7 +438,11 @@
     "noReports": "Brak otwartych zgłoszeń. W rodzinie wszystko w porządku.",
     "reportHandled": "Zgłoszenie obsłużone.",
     "markResolved": "Oznacz jako rozwiązane",
-    "dismiss": "Odrzuć"
+    "dismiss": "Odrzuć",
+    "emailNotifications": "Powiadomienia e-mail",
+    "emailNotificationsHint": "Ważne zdarzenia (zgłoszenia po profil, zatwierdzenia, prośby o usunięcie) mogą też trafiać na Twój e-mail. Cała reszta zostaje w aplikacji.",
+    "emailNotificationsOn": "Włączone",
+    "emailNotificationsOff": "Wyłączone"
   },
   "history": {
     "title": "Historia zmian",
@@ -517,7 +533,9 @@
     "eventsSection": "{count, plural, =0 {Wydarzenia z Tobą} one {# wydarzenie z Tobą} few {# wydarzenia z Tobą} other {# wydarzeń z Tobą}}",
     "eventsEmpty": "Nie ma wydarzeń z Twoim udziałem.",
     "hide": "Ukryj mnie",
-    "finish": "Wszystko gra — zakończ przegląd"
+    "finish": "Wszystko gra — zakończ przegląd",
+    "requestRemoval": "Poproś o usunięcie",
+    "removalRequested": "Prośba wysłana"
   },
   "feed": {
     "title": "Życie rodziny",
@@ -547,6 +565,23 @@
       "tooLong": "Komentarz jest za długi.",
       "notAllowed": "Nie możesz tutaj komentować.",
       "editWindowOver": "Czas na edycję tego komentarza minął."
+    }
+  },
+  "notifications": {
+    "title": "Powiadomienia",
+    "empty": "Wszystko na bieżąco.",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "bellLabel": "Powiadomienia",
+    "bellLabelUnread": "Powiadomienia, nieprzeczytane: {count}",
+    "items": {
+      "invitation_claimed": "Ktoś zgłosił się po profil {name} — sprawdź i zatwierdź.",
+      "claim_approved": "Twoje zgłoszenie zatwierdzono — profil {name} należy teraz do Ciebie.",
+      "tagged_in_photo": "Oznaczono Cię na zdjęciu.",
+      "comment_on_your_item": "Ktoś skomentował Twój element.",
+      "comment_after_you": "Pojawił się nowy komentarz tam, gdzie komentowałeś(-aś).",
+      "birthday_reminder": "{name} ma dziś urodziny!",
+      "adult_takeover_available": "{name} jest już osobą pełnoletnią — zaproś ją do przejęcia profilu.",
+      "removal_requested": "{name} prosi Cię o usunięcie elementu, na którym się znajduje."
     }
   }
 }
