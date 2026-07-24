@@ -15,9 +15,10 @@ additional_redirect_urls = ["http://localhost:3000/auth/callback"]
 enable_signup = true
 enable_confirmations = true
 
-# Google OAuth — set the real values in the Supabase dashboard for
-# production; locally export the env vars before `supabase start`.
+# Google OAuth — configured in the Supabase dashboard for production.
+# For local testing: flip to true and export SUPABASE_AUTH_GOOGLE_CLIENT_ID
+# and SUPABASE_AUTH_GOOGLE_SECRET before `supabase start`.
 [auth.external.google]
-enabled = true
+enabled = false
 client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
