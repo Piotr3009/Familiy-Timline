@@ -8,19 +8,9 @@ import {validatePartialDate} from '@/lib/dates';
 import {isPrivacyLevel} from '@/lib/privacy';
 import type {Gender, PartnerStatus} from '@/lib/database.types';
 
-export type ActionState = {error: string | null; ok?: boolean};
+import {RELATIVE_KINDS, type RelativeKind} from '@/lib/persons/relative-kinds';
 
-/** Relations the quick-add form offers, all anchored to an existing person. */
-export const RELATIVE_KINDS = [
-  'mother',
-  'father',
-  'partner',
-  'sister',
-  'brother',
-  'daughter',
-  'son'
-] as const;
-export type RelativeKind = (typeof RELATIVE_KINDS)[number];
+export type ActionState = {error: string | null; ok?: boolean};
 
 const GENDER_FOR_KIND: Partial<Record<RelativeKind, Gender>> = {
   mother: 'female',

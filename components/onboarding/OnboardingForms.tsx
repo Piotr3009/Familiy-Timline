@@ -3,13 +3,8 @@
 import {useActionState, useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {useTranslations} from 'next-intl';
-import {
-  addRelativeAction,
-  createFamilyAction,
-  RELATIVE_KINDS,
-  type ActionState,
-  type RelativeKind
-} from '@/lib/persons/actions';
+import {addRelativeAction, createFamilyAction, type ActionState} from '@/lib/persons/actions';
+import {RELATIVE_KINDS, type RelativeKind} from '@/lib/persons/relative-kinds';
 import {Alert, Button, Card, Input, Label, Select} from '@/components/ui';
 import {PersonFormFields} from '@/components/PersonFields';
 
