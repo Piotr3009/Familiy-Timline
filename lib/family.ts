@@ -1,13 +1,17 @@
 import type {User} from '@supabase/supabase-js';
 import {createClient} from '@/lib/supabase/server';
-import type {Family, FamilyRole, Person} from '@/lib/database.types';
+import type {Family, FamilyRole, VisiblePerson} from '@/lib/database.types';
 
 export type FamilyContext = {
   user: User;
   family: Family;
   role: FamilyRole;
-  /** The user's own claimed person profile in this family. */
-  person: Person | null;
+  /**
+   * The user's own claimed person profile in this family, read through
+   * visible_persons (the owner always sees their own life details). The
+   * base persons table no longer exposes life-detail columns to clients.
+   */
+  person: VisiblePerson | null;
 };
 
 /**
@@ -39,7 +43,7 @@ export async function getFamilyContext(): Promise<FamilyContext | 'no-user' | 'n
   if (!family) return 'no-family';
 
   const {data: person} = await supabase
-    .from('persons')
+    .from('visible_persons')
     .select('*')
     .eq('family_id', family.id)
     .eq('user_id', user.id)

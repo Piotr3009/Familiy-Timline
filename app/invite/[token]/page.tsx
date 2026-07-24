@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {headers} from 'next/headers';
 import {getTranslations} from 'next-intl/server';
 import {createClient} from '@/lib/supabase/server';
-import {hashInviteToken, isPlausibleToken} from '@/lib/invitations/token';
+import {isPlausibleToken} from '@/lib/invitations/token';
 import {Alert, Button, Card} from '@/components/ui';
 import {ClaimCard} from '@/components/invite/ClaimCard';
 
@@ -37,9 +37,8 @@ export default async function InvitePage({params}: {params: Promise<{token: stri
   const rateKey =
     headerList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
 
-  const tokenHash = await hashInviteToken(token);
   const {data, error} = await supabase.rpc('get_invitation_by_token', {
-    p_token_hash: tokenHash,
+    p_token: token,
     p_rate_key: rateKey
   });
 
