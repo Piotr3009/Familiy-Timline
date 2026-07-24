@@ -364,5 +364,28 @@
     "media_quota_exceeded": "You have reached your upload limit.",
     "file_size_exceeded": "This file is too large.",
     "video_duration_exceeded": "This video is too long."
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "locales": {
+      "en": "English",
+      "pl": "Polski"
+    },
+    "theme": "Appearance",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Match device"
+    },
+    "account": "Account",
+    "signedInAs": "Signed in as {email}",
+    "changePassword": "Change password",
+    "signOut": "Sign out",
+    "reportsTitle": "Reported profiles",
+    "noReports": "No open reports. All is well in the family.",
+    "reportHandled": "Report handled.",
+    "markResolved": "Mark resolved",
+    "dismiss": "Dismiss"
   }
 }

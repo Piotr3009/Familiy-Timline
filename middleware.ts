@@ -1,6 +1,13 @@
 import {NextResponse, type NextRequest} from 'next/server';
 import {createServerClient} from '@supabase/ssr';
-import {defaultLocale, isLocale, LOCALE_COOKIE, locales} from '@/i18n/config';
+import {
+  defaultLocale,
+  isLocale,
+  isTheme,
+  LOCALE_COOKIE,
+  locales,
+  THEME_COOKIE
+} from '@/i18n/config';
 
 /** Routes reachable without a session. */
 const PUBLIC_PATHS = [
@@ -69,22 +76,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // First visit: seed the locale cookie from the browser language.
-  if (!request.cookies.get(LOCALE_COOKIE)) {
-    response.cookies.set(LOCALE_COOKIE, detectLocale(request), {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-      sameSite: 'lax'
-    });
-  } else {
-    const current = request.cookies.get(LOCALE_COOKIE)!.value;
-    if (!locales.includes(current as (typeof locales)[number])) {
-      response.cookies.set(LOCALE_COOKIE, defaultLocale, {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 365,
-        sameSite: 'lax'
-      });
+  const cookieOptions = {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax' as const
+  };
+
+  // Locale: account setting overrides > existing cookie > browser language.
+  const metadataLocale = user?.user_metadata?.locale;
+  const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (typeof metadataLocale === 'string' && isLocale(metadataLocale)) {
+    if (cookieLocale !== metadataLocale) {
+      response.cookies.set(LOCALE_COOKIE, metadataLocale, cookieOptions);
     }
+  } else if (!cookieLocale) {
+    response.cookies.set(LOCALE_COOKIE, detectLocale(request), cookieOptions);
+  } else if (!locales.includes(cookieLocale as (typeof locales)[number])) {
+    response.cookies.set(LOCALE_COOKIE, defaultLocale, cookieOptions);
+  }
+
+  // Theme: account setting overrides the cookie (light is the default).
+  const metadataTheme = user?.user_metadata?.theme;
+  const cookieTheme = request.cookies.get(THEME_COOKIE)?.value;
+  if (
+    typeof metadataTheme === 'string' &&
+    isTheme(metadataTheme) &&
+    cookieTheme !== metadataTheme
+  ) {
+    response.cookies.set(THEME_COOKIE, metadataTheme, cookieOptions);
   }
 
   return response;

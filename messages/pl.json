@@ -364,5 +364,28 @@
     "media_quota_exceeded": "Osiągnięto limit przesyłanych plików.",
     "file_size_exceeded": "Ten plik jest za duży.",
     "video_duration_exceeded": "To wideo jest za długie."
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "language": "Język",
+    "locales": {
+      "en": "English",
+      "pl": "Polski"
+    },
+    "theme": "Wygląd",
+    "themes": {
+      "light": "Jasny",
+      "dark": "Ciemny",
+      "system": "Jak w urządzeniu"
+    },
+    "account": "Konto",
+    "signedInAs": "Zalogowano jako {email}",
+    "changePassword": "Zmień hasło",
+    "signOut": "Wyloguj się",
+    "reportsTitle": "Zgłoszone profile",
+    "noReports": "Brak otwartych zgłoszeń. W rodzinie wszystko w porządku.",
+    "reportHandled": "Zgłoszenie obsłużone.",
+    "markResolved": "Oznacz jako rozwiązane",
+    "dismiss": "Odrzuć"
   }
 }
