@@ -48,6 +48,8 @@ export type EventType =
 export type MediaKind = 'photo' | 'video';
 export type ReportStatus = 'open' | 'resolved' | 'dismissed';
 export type FamilyRole = 'admin' | 'member';
+export type GuardianshipType = 'parent' | 'legal_guardian';
+export type AuditAction = 'insert' | 'update' | 'delete';
 
 type ConfigRow = {
   key: string;
@@ -199,6 +201,32 @@ type ReportRow = {
   updated_at: string;
 };
 
+type GuardianshipRow = {
+  id: string;
+  family_id: string;
+  person_id: string;
+  guardian_person_id: string;
+  type: GuardianshipType;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  ended_at: string | null;
+};
+
+type AuditLogRow = {
+  id: string;
+  table_name: string;
+  row_id: string;
+  family_id: string | null;
+  action: AuditAction;
+  /**
+   * update: {column: {old, new}} — insert: {} — delete: {snapshot: row}
+   */
+  changed: Json;
+  actor_user_id: string | null;
+  created_at: string;
+};
+
 /** visible_persons view: life details are null unless details_visible. */
 type VisiblePersonRow = Omit<PersonRow, 'bio'> & {
   bio: string | null;
@@ -342,6 +370,21 @@ export type Database = {
         Update: Partial<ReportRow>;
         Relationships: [];
       };
+      guardianships: {
+        Row: GuardianshipRow;
+        Insert: WithOptional<
+          GuardianshipRow,
+          'id' | 'type' | 'created_at' | 'updated_at' | 'ended_at'
+        >;
+        Update: Partial<Pick<GuardianshipRow, 'ended_at'>>;
+        Relationships: [];
+      };
+      audit_log: {
+        Row: AuditLogRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: {
       visible_persons: {
@@ -400,6 +443,14 @@ export type Database = {
         Args: {p_a: string; p_b: string};
         Returns: boolean;
       };
+      is_guardian_of: {
+        Args: {p_person: string};
+        Returns: boolean;
+      };
+      can_manage_guardians: {
+        Args: {p_person: string};
+        Returns: boolean;
+      };
     };
     Enums: {
       gender: Gender;
@@ -413,6 +464,7 @@ export type Database = {
       media_kind: MediaKind;
       report_status: ReportStatus;
       family_role: FamilyRole;
+      guardianship_type: GuardianshipType;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -427,3 +479,5 @@ export type Invitation = InvitationRow;
 export type FamilyEvent = EventRow;
 export type Photo = PhotoRow;
 export type Report = ReportRow;
+export type Guardianship = GuardianshipRow;
+export type AuditLogEntry = AuditLogRow;

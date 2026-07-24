@@ -14,6 +14,9 @@ export type AppConfig = {
   maxVideosPerUser: number;
   inviteValidityDays: number;
   maxInvitesPerUserDay: number;
+  adulthoodAge: number;
+  maxCommentLength: number;
+  commentEditWindowMin: number;
 };
 
 const FALLBACKS: AppConfig = {
@@ -23,7 +26,10 @@ const FALLBACKS: AppConfig = {
   maxVideoDurationSec: 180,
   maxVideosPerUser: 10,
   inviteValidityDays: 30,
-  maxInvitesPerUserDay: 20
+  maxInvitesPerUserDay: 20,
+  adulthoodAge: 18,
+  maxCommentLength: 2000,
+  commentEditWindowMin: 15
 };
 
 const KEY_MAP: Record<keyof AppConfig, string> = {
@@ -33,7 +39,10 @@ const KEY_MAP: Record<keyof AppConfig, string> = {
   maxVideoDurationSec: 'max_video_duration_sec',
   maxVideosPerUser: 'max_videos_per_user',
   inviteValidityDays: 'invite_validity_days',
-  maxInvitesPerUserDay: 'max_invites_per_user_day'
+  maxInvitesPerUserDay: 'max_invites_per_user_day',
+  adulthoodAge: 'adulthood_age',
+  maxCommentLength: 'max_comment_length',
+  commentEditWindowMin: 'comment_edit_window_min'
 };
 
 export async function getAppConfig(
