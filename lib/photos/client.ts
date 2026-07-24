@@ -83,6 +83,13 @@ export async function uploadMedia(
   const isImage = input.file.type.startsWith('image/');
   if (!isVideo && !isImage) return {ok: false, error: 'photos.errors.unsupportedType'};
 
+  // Resolve the uploader up front: an expired session must fail as an
+  // auth error, not as a malformed-uuid DB error mid-upload.
+  const {
+    data: {user}
+  } = await supabase.auth.getUser();
+  if (!user) return {ok: false, error: 'errors.not_authenticated'};
+
   const photoId = crypto.randomUUID();
 
   try {
@@ -105,7 +112,7 @@ export async function uploadMedia(
       const {error: rowError} = await supabase.from('photos').insert({
         id: photoId,
         family_id: input.familyId,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? '',
+        uploaded_by: user.id,
         kind: 'video',
         storage_path_original: originalPath,
         file_size_bytes: input.file.size,
@@ -151,7 +158,7 @@ export async function uploadMedia(
       const {error: rowError} = await supabase.from('photos').insert({
         id: photoId,
         family_id: input.familyId,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? '',
+        uploaded_by: user.id,
         kind: 'photo',
         storage_path_original: originalPath,
         storage_path_preview: previewPath,

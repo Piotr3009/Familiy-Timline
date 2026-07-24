@@ -4,23 +4,37 @@ import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {getFamilyContext} from '@/lib/family';
 import {loadFamilyGraph, personName, sortByBirth} from '@/lib/persons/relations';
-import {computeTreeLayout} from '@/lib/tree';
+import {computeTreeLayout, type TreePartnerFilter} from '@/lib/tree';
 import {createSignedUrls} from '@/lib/media';
-import {Button, EmptyState} from '@/components/ui';
+import {setTreePartnerFilterAction} from '@/lib/settings/actions';
+import {Button, EmptyState, cx} from '@/components/ui';
 import {FamilyTreeView} from '@/components/tree/FamilyTreeView';
 import {TreeFocusPicker} from '@/components/tree/TreeFocusPicker';
+
+function isPartnerFilter(value: string | undefined): value is TreePartnerFilter {
+  return value === 'all' || value === 'current';
+}
 
 export default async function TreePage({
   searchParams
 }: {
-  searchParams: Promise<{focus?: string}>;
+  searchParams: Promise<{focus?: string; partners?: string}>;
 }) {
-  const {focus} = await searchParams;
+  const {focus, partners} = await searchParams;
   const ctx = await getFamilyContext();
   if (ctx === 'no-user') redirect('/login');
   if (ctx === 'no-family') redirect('/onboarding');
   const t = await getTranslations();
   const supabase = await createClient();
+
+  // Filter precedence: explicit URL param > account preference >
+  // default 'current' (spec: current-only is the default view).
+  const storedFilter = ctx.user.user_metadata?.tree_partner_filter as string | undefined;
+  const partnerFilter: TreePartnerFilter = isPartnerFilter(partners)
+    ? partners
+    : isPartnerFilter(storedFilter)
+      ? storedFilter
+      : 'current';
 
   const graph = await loadFamilyGraph(supabase, ctx.family.id);
   if (graph.persons.size === 0) {
@@ -42,7 +56,7 @@ export default async function TreePage({
     focus && graph.persons.has(focus)
       ? focus
       : ctx.person?.id ?? [...graph.persons.keys()][0]!;
-  const layout = computeTreeLayout(graph, focusId);
+  const layout = computeTreeLayout(graph, focusId, {partnerFilter});
 
   const avatarPaths = layout
     ? layout.nodes
@@ -61,15 +75,41 @@ export default async function TreePage({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-heading text-2xl">{t('tree.title')}</h1>
-        <TreeFocusPicker
-          options={options}
-          value={focusId}
-          label={t('tree.centerOn')}
-        />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <form action={setTreePartnerFilterAction} className="flex items-center gap-1">
+            <input type="hidden" name="focus" value={focusId} />
+            <span className="mr-1 text-xs text-ink-muted">{t('tree.filterLabel')}</span>
+            {(['current', 'all'] as const).map((option) => (
+              <button
+                key={option}
+                type="submit"
+                name="filter"
+                value={option}
+                className={cx(
+                  'rounded-lg border px-2.5 py-1.5 text-xs',
+                  partnerFilter === option
+                    ? 'border-amber bg-amber-soft font-medium text-amber-strong'
+                    : 'border-border text-ink-muted hover:bg-surface-sunken'
+                )}
+              >
+                {option === 'current' ? t('tree.filterCurrent') : t('tree.filterAll')}
+              </button>
+            ))}
+          </form>
+          <TreeFocusPicker
+            options={options}
+            value={focusId}
+            label={t('tree.centerOn')}
+          />
+        </div>
       </div>
       {layout ? (
         <>
-          <FamilyTreeView layout={layout} avatarUrls={avatarUrls} />
+          <FamilyTreeView
+            layout={layout}
+            avatarUrls={avatarUrls}
+            endedYearLabel={(year) => t('tree.endedYear', {year})}
+          />
           <p className="text-center text-xs text-ink-faint">
             {t('tree.hint', {name: focusPerson.first_name})}
           </p>

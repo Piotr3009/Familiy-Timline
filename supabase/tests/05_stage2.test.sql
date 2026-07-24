@@ -1,0 +1,1466 @@
+-- ============================================================
+-- Stage 2 tests: guardianships, audit log (this file grows with each
+-- Stage 2 migration; sections are ordered like the migrations).
+-- Depends on the state left by 01–04:
+--   u1 = Piotr (admin), u2 = Anna, u3 = Marek (claimed profiles),
+--   u9 = stranger with own family.
+-- ============================================================
+
+-- Test fixtures ------------------------------------------------------
+-- u4: a fresh account that will claim the guardian profile later.
+reset role;
+insert into auth.users (id, email) values
+  ('d0000000-0000-4000-8000-000000000004', 'guardian2@test.local');
+
+-- Piotr (u1) creates a NEW minor child born 2015. (For adult-profile
+-- tests further down, seed's Zofia Wiśniewska = a0..07, born 1952,
+-- unclaimed; seed's Julia = a0..08, born 2005.)
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.persons (id, family_id, managed_by, created_by,
+                            first_name, last_name, gender, birth_year)
+values ('a0000000-0000-4000-8000-000000000020',
+        'f0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'Zosia', 'Kowalska', 'female', 2015);
+
+-- ============================================================
+-- guardianships (migration 14)
+-- ============================================================
+
+-- Bootstrap: the profile manager may add the first guardian (himself).
+insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000020',
+        'a0000000-0000-4000-8000-000000000001', -- Piotr's person
+        'parent',
+        'd0000000-0000-4000-8000-000000000001');
+
+-- An existing guardian may add a second guardian (Anna's person).
+insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000020',
+        'a0000000-0000-4000-8000-000000000002', -- Anna's person (claimed by u2)
+        'parent',
+        'd0000000-0000-4000-8000-000000000001');
+
+-- Marek (u3, unrelated member, no guardianship) cannot add himself.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+    values ('f0000000-0000-4000-8000-000000000001',
+            'a0000000-0000-4000-8000-000000000020',
+            'a0000000-0000-4000-8000-00000000000a', -- Marek's person
+            'legal_guardian',
+            'd0000000-0000-4000-8000-000000000003');
+    raise exception 'TEST: non-guardian must not add guardians';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Guardian powers: Anna (u2, guardian via her claimed person) can edit
+-- the child profile even though she is not its manager.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  update public.persons set birth_place = 'Warsaw'
+  where id = 'a0000000-0000-4000-8000-000000000020';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'TEST: guardian must be able to edit the child profile'; end if;
+end $$;
+
+-- Guardian sees details even when the child profile is private.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+update public.persons set life_details_privacy = 'private'
+where id = 'a0000000-0000-4000-8000-000000000020';
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare y int;
+begin
+  select birth_year into y from public.visible_persons
+  where id = 'a0000000-0000-4000-8000-000000000020';
+  if y is distinct from 2015 then
+    raise exception 'TEST: guardian should see private child details';
+  end if;
+end $$;
+
+-- Non-guardian member must NOT see the private child details.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare y int;
+begin
+  select birth_year into y from public.visible_persons
+  where id = 'a0000000-0000-4000-8000-000000000020';
+  if y is not null then
+    raise exception 'TEST: private child details leaked to a non-guardian';
+  end if;
+end $$;
+
+-- Ending guardianships: Anna removes herself (one guardian remains)…
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+update public.guardianships set ended_at = now()
+where person_id = 'a0000000-0000-4000-8000-000000000020'
+  and guardian_person_id = 'a0000000-0000-4000-8000-000000000002';
+
+-- …but the LAST guardian cannot be removed.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    update public.guardianships set ended_at = now()
+    where person_id = 'a0000000-0000-4000-8000-000000000020'
+      and guardian_person_id = 'a0000000-0000-4000-8000-000000000001';
+    raise exception 'TEST: removing the last guardian must fail';
+  exception when others then
+    if sqlerrm <> 'last_guardian' then raise; end if;
+  end;
+end $$;
+
+-- Re-adding Anna works (history row stays ended, new active row).
+insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000020',
+        'a0000000-0000-4000-8000-000000000002',
+        'parent',
+        'd0000000-0000-4000-8000-000000000001');
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.guardianships
+  where person_id = 'a0000000-0000-4000-8000-000000000020';
+  if n <> 3 then raise exception 'TEST: guardianship history rows = %, want 3', n; end if;
+  select count(*) into n from public.guardianships
+  where person_id = 'a0000000-0000-4000-8000-000000000020' and ended_at is null;
+  if n <> 2 then raise exception 'TEST: active guardianships = %, want 2', n; end if;
+end $$;
+
+-- Clients cannot delete guardianship history.
+do $$
+declare n int;
+begin
+  delete from public.guardianships
+  where person_id = 'a0000000-0000-4000-8000-000000000020';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'TEST: guardianship rows must not be deletable'; end if;
+end $$;
+
+-- Guardianship across families is rejected by the coherence trigger.
+-- (The foreign person id is captured as superuser — under RLS the
+-- member cannot even see it, which would test nothing.)
+reset role;
+select set_config('test.foreign_person',
+  (select id::text from public.persons
+   where family_id <> 'f0000000-0000-4000-8000-000000000001' limit 1), false);
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+    values ('f0000000-0000-4000-8000-000000000001',
+            'a0000000-0000-4000-8000-000000000020',
+            current_setting('test.foreign_person')::uuid,
+            'parent',
+            'd0000000-0000-4000-8000-000000000001');
+    raise exception 'TEST: cross-family guardianship must fail';
+  exception when others then
+    if sqlerrm not like '%same family%' then raise; end if;
+  end;
+end $$;
+
+-- ============================================================
+-- audit_log (migration 14)
+-- ============================================================
+
+-- Piotr edits his own bio -> an update entry with old/new appears.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+update public.persons set bio = 'Audit trail test bio.'
+where id = 'a0000000-0000-4000-8000-000000000001';
+
+do $$
+declare e record;
+begin
+  select * into e from public.audit_log
+  where table_name = 'persons'
+    and row_id = 'a0000000-0000-4000-8000-000000000001'
+    and action = 'update'
+  order by created_at desc limit 1;
+  if not found then
+    raise exception 'TEST: person update should produce an audit entry';
+  end if;
+  if e.changed -> 'bio' ->> 'new' <> 'Audit trail test bio.' then
+    raise exception 'TEST: audit entry should record the new bio, got %', e.changed;
+  end if;
+  if e.actor_user_id <> 'd0000000-0000-4000-8000-000000000001' then
+    raise exception 'TEST: audit entry should record the actor';
+  end if;
+end $$;
+
+-- Audit entries cannot be written or altered by clients.
+do $$
+begin
+  begin
+    insert into public.audit_log (table_name, row_id, action)
+    values ('persons', 'a0000000-0000-4000-8000-000000000001', 'update');
+    raise exception 'TEST: direct audit insert must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+  begin
+    delete from public.audit_log where table_name = 'persons';
+    raise exception 'TEST: audit delete must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Privacy: Piotr makes his life details private, edits his birth place;
+-- the audit entry is invisible to other members but visible to him.
+update public.persons set life_details_privacy = 'private'
+where id = 'a0000000-0000-4000-8000-000000000001';
+update public.persons set birth_place = 'Gdańsk, Poland'
+where id = 'a0000000-0000-4000-8000-000000000001';
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.audit_log
+  where table_name = 'persons'
+    and row_id = 'a0000000-0000-4000-8000-000000000001';
+  if n <> 0 then
+    raise exception 'TEST: private person audit entries leaked to another member';
+  end if;
+end $$;
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.audit_log
+  where table_name = 'persons'
+    and row_id = 'a0000000-0000-4000-8000-000000000001'
+    and action = 'update';
+  if n < 2 then
+    raise exception 'TEST: owner should see own audit entries, got %', n;
+  end if;
+end $$;
+
+-- Restore for later sections.
+update public.persons set life_details_privacy = 'family'
+where id = 'a0000000-0000-4000-8000-000000000001';
+
+-- A private EVENT's audit history is invisible to other members.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+update public.events set description = 'edited secret'
+where id = 'e0000000-0000-4000-8000-000000000010'; -- private event from 02
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.audit_log
+  where table_name = 'events'
+    and row_id = 'e0000000-0000-4000-8000-000000000010';
+  if n <> 0 then
+    raise exception 'TEST: private event audit entries leaked';
+  end if;
+end $$;
+
+-- The stranger (u9, other family) sees no audit entries at all.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000009', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.audit_log
+  where family_id = 'f0000000-0000-4000-8000-000000000001';
+  if n <> 0 then
+    raise exception 'TEST: stranger sees % audit rows of a foreign family', n;
+  end if;
+end $$;
+
+-- Anon sees nothing.
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.audit_log;
+  if n <> 0 then raise exception 'TEST: anon audit rows = %, want 0', n; end if;
+  select count(*) into n from public.guardianships;
+  if n <> 0 then raise exception 'TEST: anon guardianships = %, want 0', n; end if;
+end $$;
+
+-- ============================================================
+-- relationships stage 2 (migration 15)
+-- ============================================================
+
+-- Fixtures: two unclaimed persons managed by Piotr (u1).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.persons (id, family_id, managed_by, created_by, first_name, last_name)
+values
+  ('a0000000-0000-4000-8000-000000000030', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001',
+   'Adam', 'Testowy'),
+  ('a0000000-0000-4000-8000-000000000031', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001',
+   'Ewa', 'Testowa');
+
+-- Marriage with coherent dates.
+insert into public.relationships (id, family_id, person_a_id, person_b_id, type, status,
+                                  start_date, wedding_date, created_by)
+values ('c0000000-0000-4000-8000-000000000001', 'f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000030', 'a0000000-0000-4000-8000-000000000031',
+        'partner', 'married', '1990-05-01', '1992-06-15',
+        'd0000000-0000-4000-8000-000000000001');
+
+-- Incoherent dates are rejected (check constraint).
+do $$
+begin
+  begin
+    update public.relationships
+    set divorce_date = '1991-01-01'
+    where id = 'c0000000-0000-4000-8000-000000000001';
+    raise exception 'TEST: divorce before wedding must be rejected';
+  exception when check_violation then null;
+  end;
+end $$;
+
+-- A second ACTIVE record for the same pair is rejected…
+do $$
+begin
+  begin
+    insert into public.relationships (family_id, person_a_id, person_b_id, type, status, created_by)
+    values ('f0000000-0000-4000-8000-000000000001',
+            'a0000000-0000-4000-8000-000000000031', 'a0000000-0000-4000-8000-000000000030',
+            'partner', 'partners', 'd0000000-0000-4000-8000-000000000001');
+    raise exception 'TEST: duplicate active partner record must be rejected';
+  exception when unique_violation then null;
+  end;
+end $$;
+
+-- …but after a divorce the pair can remarry (new record).
+update public.relationships
+set status = 'divorced', separation_date = '2000-01-01', divorce_date = '2001-02-03'
+where id = 'c0000000-0000-4000-8000-000000000001';
+
+insert into public.relationships (id, family_id, person_a_id, person_b_id, type, status,
+                                  wedding_date, created_by)
+values ('c0000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000030', 'a0000000-0000-4000-8000-000000000031',
+        'partner', 'married', '2005-08-20',
+        'd0000000-0000-4000-8000-000000000001');
+
+-- Endpoint columns are locked for clients (column-level revoke):
+-- repointing a relationship at claimed accounts must be denied.
+do $$
+begin
+  begin
+    update public.relationships
+    set person_b_id = 'a0000000-0000-4000-8000-000000000001'
+    where id = 'c0000000-0000-4000-8000-000000000002';
+    raise exception 'TEST: endpoint repointing must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Escalation guard: Piotr (u1) & Anna (u2) are both CLAIMED. Ending
+-- their marriage works; re-activating it as a NON-admin is blocked.
+update public.relationships
+set status = 'separated'
+where person_a_id = 'a0000000-0000-4000-8000-000000000001'
+  and person_b_id = 'a0000000-0000-4000-8000-000000000002'
+  and type = 'partner';
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    update public.relationships
+    set status = 'married'
+    where person_a_id = 'a0000000-0000-4000-8000-000000000001'
+      and person_b_id = 'a0000000-0000-4000-8000-000000000002'
+      and type = 'partner';
+    raise exception 'TEST: non-admin re-activation between claimed accounts must fail';
+  exception when others then
+    if sqlerrm <> 'relationship_escalation_blocked' then raise; end if;
+  end;
+end $$;
+
+-- A family admin may restore it (explicit human override).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+update public.relationships
+set status = 'married'
+where person_a_id = 'a0000000-0000-4000-8000-000000000001'
+  and person_b_id = 'a0000000-0000-4000-8000-000000000002'
+  and type = 'partner';
+
+-- Profile editors of an endpoint may maintain the relationship even if
+-- they did not create it: Anna (u2) manages two unclaimed persons whose
+-- relationship Piotr created.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+insert into public.persons (id, family_id, managed_by, created_by, first_name, last_name)
+values
+  ('a0000000-0000-4000-8000-000000000032', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002',
+   'Jan', 'Testowy'),
+  ('a0000000-0000-4000-8000-000000000033', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002',
+   'Zofia', 'Testowa');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.relationships (id, family_id, person_a_id, person_b_id, type, status, created_by)
+values ('c0000000-0000-4000-8000-000000000003', 'f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000032', 'a0000000-0000-4000-8000-000000000033',
+        'partner', 'married', 'd0000000-0000-4000-8000-000000000001');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  update public.relationships set status = 'divorced', divorce_date = '2020-05-05'
+  where id = 'c0000000-0000-4000-8000-000000000003';
+  get diagnostics n = row_count;
+  if n <> 1 then
+    raise exception 'TEST: endpoint manager must be able to record a divorce';
+  end if;
+end $$;
+
+-- Relationship changes land in the audit log with old/new status.
+do $$
+declare e record;
+begin
+  select * into e from public.audit_log
+  where table_name = 'relationships'
+    and row_id = 'c0000000-0000-4000-8000-000000000003'
+    and action = 'update'
+  order by created_at desc limit 1;
+  if not found then
+    raise exception 'TEST: relationship update should produce an audit entry';
+  end if;
+  if e.changed -> 'status' ->> 'old' <> 'married'
+     or e.changed -> 'status' ->> 'new' <> 'divorced' then
+    raise exception 'TEST: audit entry should record the status change, got %', e.changed;
+  end if;
+end $$;
+
+-- photos.event_id family check: linking a photo to another family's
+-- event must fail. (u9's family has its own event.)
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000009', false);
+set role authenticated;
+
+insert into public.events (id, family_id, type, title, event_year, created_by)
+select 'e0000000-0000-4000-8000-000000000099', f.id, 'other', 'Foreign event', 2020,
+       'd0000000-0000-4000-8000-000000000009'
+from public.families f
+where f.created_by = 'd0000000-0000-4000-8000-000000000009';
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    update public.photos
+    set event_id = 'e0000000-0000-4000-8000-000000000099'
+    where id = 'b0000000-0000-4000-8000-000000000001';
+    raise exception 'TEST: cross-family photo->event link must fail';
+  exception when others then
+    if sqlerrm not like '%must belong to the photo family%' then raise; end if;
+  end;
+end $$;
+
+-- ============================================================
+-- minors (migration 16)
+-- ============================================================
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+-- Zosia (born 2015) is a minor; Zofia (b. 1952) and Julia (b. 2005,
+-- past the age-18 boundary in 2026) are adults.
+do $$
+begin
+  if not public.is_minor('a0000000-0000-4000-8000-000000000020') then
+    raise exception 'TEST: a child born 2015 must be a minor';
+  end if;
+  if public.is_minor('a0000000-0000-4000-8000-000000000007') then
+    raise exception 'TEST: a person born 1952 must not be a minor';
+  end if;
+  if public.is_minor('a0000000-0000-4000-8000-000000000008') then
+    raise exception 'TEST: a person born 2005 (past 18) must not be a minor';
+  end if;
+end $$;
+
+-- Deceased and birth-date-less profiles are never minors, even at ages
+-- that would otherwise qualify.
+insert into public.persons (id, family_id, managed_by, created_by,
+                            first_name, last_name, birth_year, is_deceased)
+values ('a0000000-0000-4000-8000-000000000022',
+        'f0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'Angel', 'Testowy', 2016, true);
+insert into public.persons (id, family_id, managed_by, created_by,
+                            first_name, last_name)
+values ('a0000000-0000-4000-8000-000000000023',
+        'f0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'Nieznana', 'Testowa');
+
+do $$
+begin
+  if public.is_minor('a0000000-0000-4000-8000-000000000022') then
+    raise exception 'TEST: a deceased child must not count as a minor';
+  end if;
+  if public.is_minor('a0000000-0000-4000-8000-000000000023') then
+    raise exception 'TEST: a birth-date-less profile must not count as a minor';
+  end if;
+end $$;
+
+-- HARD RULE: inviting a minor fails.
+do $$
+begin
+  begin
+    perform public.create_invitation('a0000000-0000-4000-8000-000000000020', 'tok_zosia');
+    raise exception 'TEST: inviting a minor must fail';
+  exception when others then
+    if sqlerrm <> 'person_is_minor' then raise; end if;
+  end;
+end $$;
+
+-- Inviting the adult (Julia, unclaimed) still works.
+do $$
+declare v jsonb;
+begin
+  v := public.create_invitation('a0000000-0000-4000-8000-000000000007', 'tok_zofia');
+  if v->>'invitation_id' is null then
+    raise exception 'TEST: inviting an adult should work';
+  end if;
+end $$;
+
+-- All current privacy levels remain settable on a minor (family is the
+-- widest level today; the cap only bites for future wider levels).
+update public.persons set life_details_privacy = 'immediate_family'
+where id = 'a0000000-0000-4000-8000-000000000020';
+update public.persons set life_details_privacy = 'private'
+where id = 'a0000000-0000-4000-8000-000000000020';
+
+-- ============================================================
+-- adulthood transfer (migration 17)
+-- ============================================================
+
+-- u5 will claim Zofia W. (a0..07, adult, unclaimed, guardian-managed).
+reset role;
+insert into auth.users (id, email) values
+  ('d0000000-0000-4000-8000-000000000005', 'zofia@test.local');
+
+-- Piotr becomes Zofia's guardian and tags her in a family-visible photo
+-- and event, so the review flow has content to hide. (Tags on PRIVATE
+-- items are invisible to the tagged person — nothing to hide there.)
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000007',
+        'a0000000-0000-4000-8000-000000000001',
+        'parent',
+        'd0000000-0000-4000-8000-000000000001');
+
+insert into public.photos (
+  id, family_id, uploaded_by, kind, storage_path_original, file_size_bytes, privacy
+) values (
+  'b0000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000001', 'photo',
+  'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000002/original.jpg',
+  1000, 'family'
+);
+insert into public.events (id, family_id, type, title, event_year, privacy, created_by)
+values ('e0000000-0000-4000-8000-000000000020', 'f0000000-0000-4000-8000-000000000001',
+        'family_gathering', null, 2015, 'family',
+        'd0000000-0000-4000-8000-000000000001');
+
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000007');
+insert into public.event_persons (event_id, person_id)
+values ('e0000000-0000-4000-8000-000000000020', 'a0000000-0000-4000-8000-000000000007');
+
+-- u5 claims Julia's invitation (tok_julia from the minors section).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare v jsonb;
+begin
+  v := public.claim_invitation('tok_zofia');
+  if v->>'person_id' <> 'a0000000-0000-4000-8000-000000000007' then
+    raise exception 'TEST: claim returned wrong person';
+  end if;
+end $$;
+
+-- Piotr (guardian + inviter) approves; ownership transfers and ALL
+-- guardianships close (kept as history).
+reset role;
+select set_config('test.inv_zofia',
+  (select id::text from public.invitations
+   where person_id = 'a0000000-0000-4000-8000-000000000007'
+     and claim_status = 'pending_approval'), false);
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare v jsonb;
+begin
+  v := public.approve_claim(current_setting('test.inv_zofia')::uuid);
+  if v->>'claimed_by' <> 'd0000000-0000-4000-8000-000000000005' then
+    raise exception 'TEST: approve returned wrong claimer';
+  end if;
+end $$;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.persons
+  where id = 'a0000000-0000-4000-8000-000000000007'
+    and user_id = 'd0000000-0000-4000-8000-000000000005';
+  if n <> 1 then raise exception 'TEST: ownership must transfer on approval'; end if;
+  select count(*) into n from public.guardianships
+  where person_id = 'a0000000-0000-4000-8000-000000000007' and ended_at is null;
+  if n <> 0 then raise exception 'TEST: guardianships must close on takeover'; end if;
+  select count(*) into n from public.guardianships
+  where person_id = 'a0000000-0000-4000-8000-000000000007';
+  if n < 1 then raise exception 'TEST: guardianship history must be kept'; end if;
+end $$;
+
+-- The new owner hides herself: removes her own tag and participation
+-- (even on items she cannot edit — they belong to Piotr).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  delete from public.photo_persons
+  where photo_id = 'b0000000-0000-4000-8000-000000000002'
+    and person_id = 'a0000000-0000-4000-8000-000000000007';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'TEST: owner must be able to remove own photo tag'; end if;
+
+  delete from public.event_persons
+  where event_id = 'e0000000-0000-4000-8000-000000000020'
+    and person_id = 'a0000000-0000-4000-8000-000000000007';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'TEST: owner must be able to remove own participation'; end if;
+end $$;
+
+-- …but NOT someone else's tag (Piotr's own tag on his photo).
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  delete from public.photo_persons
+  where photo_id = 'b0000000-0000-4000-8000-000000000002'
+    and person_id = 'a0000000-0000-4000-8000-000000000001';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'TEST: removing another person''s tag must be filtered'; end if;
+end $$;
+
+-- Review completion marker is writable by the owner and visible in the
+-- view.
+update public.persons set takeover_reviewed_at = now()
+where id = 'a0000000-0000-4000-8000-000000000007';
+
+do $$
+declare ts timestamptz;
+begin
+  select takeover_reviewed_at into ts from public.visible_persons
+  where id = 'a0000000-0000-4000-8000-000000000007';
+  if ts is null then
+    raise exception 'TEST: takeover_reviewed_at must round-trip through the view';
+  end if;
+end $$;
+
+-- ============================================================
+-- feed (migration 18) — the leak tests
+-- ============================================================
+
+-- Anna (u2) uploads a PRIVATE photo: a feed item appears for her only.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+insert into public.photos (
+  id, family_id, uploaded_by, kind, storage_path_original, file_size_bytes, privacy
+) values (
+  'b0000000-0000-4000-8000-000000000010', 'f0000000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000002', 'photo',
+  'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000010/original.jpg',
+  1000, 'private'
+);
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added'
+    and payload -> 'photo_ids' ? 'b0000000-0000-4000-8000-000000000010';
+  if n <> 1 then raise exception 'TEST: uploader must see own private photo feed item'; end if;
+end $$;
+
+-- LEAK TEST: no other member may see that feed item.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where payload -> 'photo_ids' ? 'b0000000-0000-4000-8000-000000000010';
+  if n <> 0 then
+    raise exception 'TEST: private photo produced a visible feed item for another member';
+  end if;
+end $$;
+
+-- Marek (u3) uploads two family-visible photos quickly: ONE batched
+-- item, visible to other members.
+insert into public.photos (
+  id, family_id, uploaded_by, kind, storage_path_original, file_size_bytes, privacy
+) values
+  ('b0000000-0000-4000-8000-000000000011', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000003', 'photo',
+   'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000011/original.jpg',
+   1000, 'family'),
+  ('b0000000-0000-4000-8000-000000000012', 'f0000000-0000-4000-8000-000000000001',
+   'd0000000-0000-4000-8000-000000000003', 'photo',
+   'f0000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-000000000012/original.jpg',
+   1000, 'family');
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 1 then raise exception 'TEST: quick uploads must batch into one item, got %', n; end if;
+  select jsonb_array_length(payload -> 'photo_ids') into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 2 then raise exception 'TEST: batch should hold 2 photo ids, got %', n; end if;
+end $$;
+
+-- Other members see the batched item.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 1 then raise exception 'TEST: family photo feed item should be visible'; end if;
+end $$;
+
+-- Private EVENT: feed item only for its creator.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+insert into public.events (id, family_id, type, title, event_year, privacy, created_by)
+values ('e0000000-0000-4000-8000-000000000030', 'f0000000-0000-4000-8000-000000000001',
+        'other', 'Marek private note', 2026, 'private',
+        'd0000000-0000-4000-8000-000000000003');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where target_table = 'events'
+    and target_id = 'e0000000-0000-4000-8000-000000000030';
+  if n <> 0 then
+    raise exception 'TEST: private event produced a visible feed item for another member';
+  end if;
+end $$;
+
+-- person_added and relationship items are visible to family members…
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'person_added'
+    and target_id = 'a0000000-0000-4000-8000-000000000020'; -- Zosia
+  if n <> 1 then raise exception 'TEST: person_added item should be visible to members'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'relationship_ended'
+    and target_id = 'c0000000-0000-4000-8000-000000000003'; -- Jan+Zofia divorce
+  if n <> 1 then raise exception 'TEST: relationship_ended item should exist and be visible'; end if;
+end $$;
+
+-- …but a member of ANOTHER family sees none of this family's feed.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000009', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where family_id = 'f0000000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'TEST: stranger sees % feed items of a foreign family', n; end if;
+end $$;
+
+-- Clients cannot write the feed.
+do $$
+begin
+  begin
+    insert into public.feed_items (family_id, type)
+    values ('f0000000-0000-4000-8000-000000000001', 'person_added');
+    raise exception 'TEST: direct feed insert must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Deleting the target removes/empties its feed items.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+delete from public.photos where id in
+  ('b0000000-0000-4000-8000-000000000011', 'b0000000-0000-4000-8000-000000000012');
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items
+  where type = 'photo_added' and actor_user_id = 'd0000000-0000-4000-8000-000000000003';
+  if n <> 0 then raise exception 'TEST: emptied photo batch must disappear from the feed'; end if;
+end $$;
+
+-- Anon sees nothing.
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.feed_items;
+  if n <> 0 then raise exception 'TEST: anon feed items = %, want 0', n; end if;
+end $$;
+
+-- ============================================================
+-- comments (migration 19)
+-- ============================================================
+
+-- Anna comments on the family event from the takeover section.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000001', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000020',
+        'd0000000-0000-4000-8000-000000000002', 'What a lovely day that was!');
+
+-- The comment and its feed item are visible to another member.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 1 then raise exception 'TEST: comment on family event should be visible'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'comment_added'
+    and target_id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 1 then raise exception 'TEST: comment should produce a visible feed item'; end if;
+end $$;
+
+-- A comment on a PRIVATE event is invisible to others (and so is its
+-- feed item) — commenting there is not even possible for non-viewers.
+do $$
+begin
+  begin
+    insert into public.comments (family_id, target_type, target_id, author_user_id, body)
+    values ('f0000000-0000-4000-8000-000000000001',
+            'event', 'e0000000-0000-4000-8000-000000000010',
+            'd0000000-0000-4000-8000-000000000003', 'sneaky');
+    raise exception 'TEST: commenting on an invisible event must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000010',
+        'd0000000-0000-4000-8000-000000000001', 'my private note comment');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000002';
+  if n <> 0 then raise exception 'TEST: comment on private event leaked'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'comment_added'
+    and target_id = 'cc000000-0000-4000-8000-000000000002';
+  if n <> 0 then raise exception 'TEST: private comment feed item leaked'; end if;
+end $$;
+
+-- Author can edit within the window…
+update public.comments
+set body = 'What a lovely day that was! (edited)'
+where id = 'cc000000-0000-4000-8000-000000000001';
+
+do $$
+declare v text;
+begin
+  select body into v from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  if v not like '%(edited)' then
+    raise exception 'TEST: author should be able to edit within the window';
+  end if;
+end $$;
+
+-- …but another member cannot edit it.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  update public.comments set body = 'hijacked'
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'TEST: only the author may edit a comment'; end if;
+end $$;
+
+-- Nor can anyone hard-delete it.
+do $$
+begin
+  begin
+    delete from public.comments where id = 'cc000000-0000-4000-8000-000000000001';
+    raise exception 'TEST: hard delete must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Marek (not author, not admin) cannot soft delete Anna's comment…
+do $$
+begin
+  begin
+    perform public.delete_comment('cc000000-0000-4000-8000-000000000001');
+    raise exception 'TEST: non-author non-admin must not delete comments';
+  exception when others then
+    if sqlerrm <> 'not_allowed_to_delete_comment' then raise; end if;
+  end;
+end $$;
+
+-- …but the family admin (Piotr) can; the feed item disappears.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+select public.delete_comment('cc000000-0000-4000-8000-000000000001');
+
+do $$
+declare n bigint;
+begin
+  -- Soft-deleted comments vanish from EVERY client read (incl. admin).
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'TEST: soft-deleted comment must be invisible'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'comment_added'
+    and target_id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'TEST: deleted comment must leave the feed'; end if;
+end $$;
+
+-- The row itself still exists with deleted_at set (superuser check).
+reset role;
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001' and deleted_at is not null;
+  if n <> 1 then raise exception 'TEST: soft delete should keep the row with deleted_at'; end if;
+end $$;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+-- Client-supplied timestamps cannot stretch the edit window.
+do $$
+declare v_created timestamptz;
+begin
+  insert into public.comments (id, family_id, target_type, target_id, author_user_id,
+                               body, created_at)
+  values ('cc000000-0000-4000-8000-000000000005', 'f0000000-0000-4000-8000-000000000001',
+          'event', 'e0000000-0000-4000-8000-000000000020',
+          'd0000000-0000-4000-8000-000000000001', 'backdate attempt',
+          '2099-01-01T00:00:00Z');
+  select created_at into v_created from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000005';
+  if v_created > now() + interval '1 minute' then
+    raise exception 'TEST: client-supplied created_at must be overridden';
+  end if;
+end $$;
+
+-- Over-long comments are rejected (config max_comment_length).
+do $$
+begin
+  begin
+    insert into public.comments (family_id, target_type, target_id, author_user_id, body)
+    values ('f0000000-0000-4000-8000-000000000001',
+            'event', 'e0000000-0000-4000-8000-000000000020',
+            'd0000000-0000-4000-8000-000000000001', repeat('x', 2001));
+    raise exception 'TEST: over-long comment must be rejected';
+  exception when others then
+    if sqlerrm <> 'comment_too_long' then raise; end if;
+  end;
+end $$;
+
+-- ============================================================
+-- notifications (migration 20)
+-- ============================================================
+
+-- The Julia claim/approval earlier ran BEFORE migration-20 triggers?
+-- No — triggers exist since migrations run first. Verify both sides:
+-- Piotr (inviter+guardian) got invitation_claimed, u5 got claim_approved.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'invitation_claimed'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000007';
+  if n < 1 then raise exception 'TEST: approver should be notified of the claim'; end if;
+end $$;
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'claim_approved';
+  if n <> 1 then raise exception 'TEST: claimer should be notified of the approval'; end if;
+  -- RLS: u5 sees ONLY their own notifications.
+  select count(*) into n from public.notifications
+  where recipient_user_id <> 'd0000000-0000-4000-8000-000000000005';
+  if n <> 0 then raise exception 'TEST: notifications of other users leaked'; end if;
+end $$;
+
+-- Tag notification: Piotr tags Zofia's profile (claimed by u5) in a family photo.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000007');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'tagged_in_photo'
+    and payload ->> 'photo_id' = 'b0000000-0000-4000-8000-000000000002';
+  if n <> 1 then raise exception 'TEST: tagged person should be notified'; end if;
+end $$;
+
+-- Comment notifications: owner + prior commenters, never the author.
+-- The family event e0..20 belongs to Piotr; Anna commented on it before
+-- (comment cc..01, soft-deleted since — prior-commenter logic must skip
+-- deleted comments' authors...  Anna's comment IS deleted, so she is
+-- NOT a prior commenter). u5 comments now → only Piotr is notified.
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000003', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000020',
+        'd0000000-0000-4000-8000-000000000005', 'I remember this!');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'comment_on_your_item'
+    and payload ->> 'comment_id' = 'cc000000-0000-4000-8000-000000000003';
+  if n <> 1 then raise exception 'TEST: item owner should be notified of the comment'; end if;
+end $$;
+
+-- Second commenter (Piotr, the owner) → u5 gets comment_after_you.
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000004', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000020',
+        'd0000000-0000-4000-8000-000000000001', 'Great memories.');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'comment_after_you'
+    and payload ->> 'comment_id' = 'cc000000-0000-4000-8000-000000000004';
+  if n <> 1 then raise exception 'TEST: prior commenter should be notified'; end if;
+end $$;
+
+-- Derived notifications: Piotr guards Zosia (minor -> no takeover
+-- notification) but nobody adult; make him guard an adult to verify.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.persons (id, family_id, managed_by, created_by,
+                            first_name, last_name, birth_year)
+values ('a0000000-0000-4000-8000-000000000021',
+        'f0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'Dorosly', 'Testowy', 1999);
+insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000021',
+        'a0000000-0000-4000-8000-000000000001',
+        'legal_guardian',
+        'd0000000-0000-4000-8000-000000000001');
+
+select public.refresh_derived_notifications();
+-- Idempotent: calling twice must not duplicate.
+select public.refresh_derived_notifications();
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'adult_takeover_available'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000021';
+  if n <> 1 then
+    raise exception 'TEST: guardian of an unclaimed adult should get one takeover notification, got %', n;
+  end if;
+  select count(*) into n from public.notifications
+  where type = 'adult_takeover_available'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000020';
+  if n <> 0 then
+    raise exception 'TEST: minors must not produce takeover notifications';
+  end if;
+end $$;
+
+-- Removal request: u5 asks Piotr to remove the family photo.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare v jsonb;
+begin
+  v := public.request_content_removal('photo', 'b0000000-0000-4000-8000-000000000002');
+  if v ->> 'owner_user_id' <> 'd0000000-0000-4000-8000-000000000001' then
+    raise exception 'TEST: removal request should return the owner';
+  end if;
+  -- Repeat is deduplicated.
+  v := public.request_content_removal('photo', 'b0000000-0000-4000-8000-000000000002');
+end $$;
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'removal_requested';
+  if n <> 1 then
+    raise exception 'TEST: owner should get exactly one removal request, got %', n;
+  end if;
+end $$;
+
+-- Mark-as-read: recipient may set read_at; clients cannot insert.
+update public.notifications set read_at = now()
+where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+  and read_at is null;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and read_at is null;
+  if n <> 0 then raise exception 'TEST: mark-all-read should clear unread'; end if;
+  begin
+    insert into public.notifications (recipient_user_id, type)
+    values ('d0000000-0000-4000-8000-000000000001', 'birthday_reminder');
+    raise exception 'TEST: direct notification insert must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Anon sees nothing.
+reset role;
+select set_config('request.jwt.claim.sub', '', false);
+set role anon;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications;
+  if n <> 0 then raise exception 'TEST: anon notifications = %, want 0', n; end if;
+end $$;
+
+-- ============================================================
+-- final-review hardening fixes
+-- ============================================================
+
+-- events/photos structural columns are locked at the column level.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    update public.events set created_by = 'd0000000-0000-4000-8000-000000000003'
+    where id = 'e0000000-0000-4000-8000-000000000020';
+    raise exception 'TEST: forging events.created_by must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+  begin
+    update public.photos set uploaded_by = 'd0000000-0000-4000-8000-000000000003'
+    where id = 'b0000000-0000-4000-8000-000000000002';
+    raise exception 'TEST: forging photos.uploaded_by must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- is_minor is family-gated: the stranger (u9) always gets false.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000009', false);
+set role authenticated;
+
+do $$
+begin
+  if public.is_minor('a0000000-0000-4000-8000-000000000020') then
+    raise exception 'TEST: is_minor must not answer for other families';
+  end if;
+  if public.person_is_unclaimed('a0000000-0000-4000-8000-000000000020') then
+    raise exception 'TEST: person_is_unclaimed must not answer for other families';
+  end if;
+end $$;
+
+-- birthday_reminder respects life-details privacy: give Zosia a
+-- birthday today but PRIVATE details; her non-guardian immediate family
+-- must not receive a reminder. (Marek u3 has no relationship to Zosia,
+-- so build the case around Anna: Zosia's details are private and Anna
+-- IS a guardian, so Anna may still be reminded — the negative case is
+-- Piotr's wife-side relatives; simplest reliable probe: a member with
+-- an immediate-family link but no detail access. Katarzyna is Piotr's
+-- sister and not related to Zosia, so instead verify by the absence of
+-- reminders for members without detail visibility overall.)
+reset role;
+update public.persons
+set birth_month = extract(month from current_date)::int,
+    birth_day = extract(day from current_date)::int
+where id = 'a0000000-0000-4000-8000-000000000020';
+-- Zosia's details are already 'private' from the guardianship section;
+-- add a parent_child link so she is immediate family of Piotr's person.
+insert into public.relationships (family_id, person_a_id, person_b_id, type, parent_role, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000020',
+        'parent_child', 'biological',
+        'd0000000-0000-4000-8000-000000000001');
+
+-- Anna (u2): immediate family via her marriage? No — immediate family
+-- resolves person-to-person; Anna is NOT Zosia's parent/sibling here,
+-- so the reminder must not appear for her regardless. The positive
+-- case: Piotr (parent + guardian, may see details) DOES get one.
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+select public.refresh_derived_notifications();
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'birthday_reminder'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000020';
+  if n <> 1 then
+    raise exception 'TEST: guardian parent should get the birthday reminder, got %', n;
+  end if;
+end $$;
+
+-- Negative case: make Zosia also Anna's child (immediate family), but
+-- Anna's guardianship stays — she can see details. True negative needs
+-- a non-guardian parent: use Marek — parent link, no guardianship, and
+-- Zosia's details are private, so NO reminder for him.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+insert into public.relationships (family_id, person_a_id, person_b_id, type, parent_role, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-00000000000a',
+        'a0000000-0000-4000-8000-000000000020',
+        'parent_child', 'step',
+        'd0000000-0000-4000-8000-000000000001');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+select public.refresh_derived_notifications();
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000003'
+    and type = 'birthday_reminder'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000020';
+  if n <> 0 then
+    raise exception 'TEST: private birth date must not produce reminders for non-viewers';
+  end if;
+end $$;
+
+-- tagged_in_photo is not sent for PRIVATE photos the recipient cannot
+-- see: Anna tags Zofia's profile (claimed by u5) in her private photo b0..10.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000010', 'a0000000-0000-4000-8000-000000000007');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'tagged_in_photo'
+    and payload ->> 'photo_id' = 'b0000000-0000-4000-8000-000000000010';
+  if n <> 0 then
+    raise exception 'TEST: private photo tags must not notify (they leak existence)';
+  end if;
+end $$;
+
+reset role;
+select 'stage 2 tests passed (guardianships, audit, relationships, minors, takeover, feed, comments, notifications)' as ok;

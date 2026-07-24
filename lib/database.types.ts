@@ -48,6 +48,28 @@ export type EventType =
 export type MediaKind = 'photo' | 'video';
 export type ReportStatus = 'open' | 'resolved' | 'dismissed';
 export type FamilyRole = 'admin' | 'member';
+export type GuardianshipType = 'parent' | 'legal_guardian';
+export type AuditAction = 'insert' | 'update' | 'delete';
+export type FeedItemType =
+  | 'person_added'
+  | 'person_claimed'
+  | 'photo_added'
+  | 'event_added'
+  | 'relationship_added'
+  | 'relationship_ended'
+  | 'comment_added'
+  | 'birthday_today'
+  | 'anniversary_today';
+export type CommentTarget = 'event' | 'photo';
+export type NotificationType =
+  | 'invitation_claimed'
+  | 'claim_approved'
+  | 'tagged_in_photo'
+  | 'comment_on_your_item'
+  | 'comment_after_you'
+  | 'birthday_reminder'
+  | 'adult_takeover_available'
+  | 'removal_requested';
 
 type ConfigRow = {
   key: string;
@@ -94,6 +116,8 @@ type PersonRow = {
   avatar_url: string | null;
   bio: string | null;
   life_details_privacy: PrivacyLevel;
+  /** Set when the owner finished the post-takeover review screen. */
+  takeover_reviewed_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -199,6 +223,69 @@ type ReportRow = {
   updated_at: string;
 };
 
+type GuardianshipRow = {
+  id: string;
+  family_id: string;
+  person_id: string;
+  guardian_person_id: string;
+  type: GuardianshipType;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  ended_at: string | null;
+};
+
+type AuditLogRow = {
+  id: string;
+  table_name: string;
+  row_id: string;
+  family_id: string | null;
+  action: AuditAction;
+  /**
+   * update: {column: {old, new}} — insert: {} — delete: {snapshot: row}
+   */
+  changed: Json;
+  actor_user_id: string | null;
+  created_at: string;
+};
+
+type FeedItemRow = {
+  id: string;
+  family_id: string;
+  type: FeedItemType;
+  actor_user_id: string | null;
+  target_table: string | null;
+  target_id: string | null;
+  payload: Json;
+  created_at: string;
+  updated_at: string;
+};
+
+type CommentRow = {
+  id: string;
+  family_id: string;
+  target_type: CommentTarget;
+  target_id: string;
+  author_user_id: string;
+  body: string;
+  /** Reserved for future threading; the Stage 2 UI ignores it. */
+  parent_id: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type NotificationRow = {
+  id: string;
+  recipient_user_id: string;
+  family_id: string | null;
+  type: NotificationType;
+  payload: Json;
+  dedupe_key: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
 /** visible_persons view: life details are null unless details_visible. */
 type VisiblePersonRow = Omit<PersonRow, 'bio'> & {
   bio: string | null;
@@ -250,6 +337,7 @@ export type Database = {
           | 'avatar_url'
           | 'bio'
           | 'life_details_privacy'
+          | 'takeover_reviewed_at'
           | 'created_at'
           | 'updated_at'
         >;
@@ -342,6 +430,42 @@ export type Database = {
         Update: Partial<ReportRow>;
         Relationships: [];
       };
+      guardianships: {
+        Row: GuardianshipRow;
+        Insert: WithOptional<
+          GuardianshipRow,
+          'id' | 'type' | 'created_at' | 'updated_at' | 'ended_at'
+        >;
+        Update: Partial<Pick<GuardianshipRow, 'ended_at'>>;
+        Relationships: [];
+      };
+      audit_log: {
+        Row: AuditLogRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      feed_items: {
+        Row: FeedItemRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      comments: {
+        Row: CommentRow;
+        Insert: WithOptional<
+          CommentRow,
+          'id' | 'parent_id' | 'deleted_at' | 'created_at' | 'updated_at'
+        >;
+        Update: Partial<Pick<CommentRow, 'body'>>;
+        Relationships: [];
+      };
+      notifications: {
+        Row: NotificationRow;
+        Insert: never;
+        Update: Partial<Pick<NotificationRow, 'read_at'>>;
+        Relationships: [];
+      };
     };
     Views: {
       visible_persons: {
@@ -400,6 +524,26 @@ export type Database = {
         Args: {p_a: string; p_b: string};
         Returns: boolean;
       };
+      is_guardian_of: {
+        Args: {p_person: string};
+        Returns: boolean;
+      };
+      can_manage_guardians: {
+        Args: {p_person: string};
+        Returns: boolean;
+      };
+      delete_comment: {
+        Args: {p_comment: string};
+        Returns: undefined;
+      };
+      refresh_derived_notifications: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      request_content_removal: {
+        Args: {p_target_type: CommentTarget; p_target_id: string};
+        Returns: Json;
+      };
     };
     Enums: {
       gender: Gender;
@@ -413,6 +557,10 @@ export type Database = {
       media_kind: MediaKind;
       report_status: ReportStatus;
       family_role: FamilyRole;
+      guardianship_type: GuardianshipType;
+      feed_item_type: FeedItemType;
+      comment_target: CommentTarget;
+      notification_type: NotificationType;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -427,3 +575,8 @@ export type Invitation = InvitationRow;
 export type FamilyEvent = EventRow;
 export type Photo = PhotoRow;
 export type Report = ReportRow;
+export type Guardianship = GuardianshipRow;
+export type AuditLogEntry = AuditLogRow;
+export type FeedItem = FeedItemRow;
+export type Comment = CommentRow;
+export type Notification = NotificationRow;

@@ -19,7 +19,13 @@ const DB_ERROR_TOKENS = [
   'not_authenticated',
   'media_quota_exceeded',
   'file_size_exceeded',
-  'video_duration_exceeded'
+  'video_duration_exceeded',
+  'relationship_escalation_blocked',
+  'last_guardian',
+  'person_is_minor',
+  'comment_too_long',
+  'comment_not_found',
+  'not_allowed_to_delete_comment'
 ] as const;
 
 export type DbErrorToken = (typeof DB_ERROR_TOKENS)[number];

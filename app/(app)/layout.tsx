@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {getFamilyContext} from '@/lib/family';
 import {AppNav} from '@/components/AppNav';
+import {NotificationsBell} from '@/components/notifications/NotificationsBell';
 
 export default async function AppLayout({children}: {children: React.ReactNode}) {
   const ctx = await getFamilyContext();
@@ -17,7 +18,10 @@ export default async function AppLayout({children}: {children: React.ReactNode})
               {ctx.family.name}
             </span>
           </Link>
-          <AppNav />
+          <div className="flex items-center gap-1">
+            <AppNav />
+            <NotificationsBell userId={ctx.user.id} />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>

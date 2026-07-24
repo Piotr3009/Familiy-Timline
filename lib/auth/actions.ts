@@ -14,9 +14,18 @@ function appUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 }
 
-/** Only allow internal redirect targets. */
+/**
+ * Only allow internal redirect targets. Backslashes are rejected too:
+ * URL parsers treat '\' as '/', so '/\evil.com' would resolve to
+ * '//evil.com' (protocol-relative external redirect).
+ */
 function safeNext(next: unknown): string {
-  if (typeof next === 'string' && next.startsWith('/') && !next.startsWith('//')) {
+  if (
+    typeof next === 'string' &&
+    next.startsWith('/') &&
+    !next.startsWith('//') &&
+    !next.includes('\\')
+  ) {
     return next;
   }
   return '/dashboard';
@@ -30,7 +39,10 @@ export async function signUpAction(
   const password = String(formData.get('password') ?? '');
   const next = safeNext(formData.get('next'));
 
-  if (!email || password.length < 8) {
+  if (!email) {
+    return {error: 'auth.errors.emailRequired'};
+  }
+  if (password.length < 8) {
     return {error: 'auth.errors.weakPassword'};
   }
 

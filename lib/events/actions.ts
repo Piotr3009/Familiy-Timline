@@ -29,7 +29,8 @@ type EventFields = {
   year: number;
   month: number | null;
   day: number | null;
-  privacy: 'private' | 'immediate_family' | 'family';
+  /** null = not provided/invalid — create defaults it, update preserves. */
+  privacy: 'private' | 'immediate_family' | 'family' | null;
   participantIds: string[];
 };
 
@@ -54,7 +55,7 @@ function readEventFields(formData: FormData): EventFields | {fieldError: string}
     return {fieldError: 'persons.errors.invalidDate'};
   }
 
-  const rawPrivacy = String(formData.get('privacy') ?? 'family');
+  const rawPrivacy = String(formData.get('privacy') ?? '');
   return {
     type: rawType,
     title,
@@ -63,7 +64,7 @@ function readEventFields(formData: FormData): EventFields | {fieldError: string}
     year,
     month,
     day,
-    privacy: isPrivacyLevel(rawPrivacy) ? rawPrivacy : 'family',
+    privacy: isPrivacyLevel(rawPrivacy) ? rawPrivacy : null,
     participantIds: formData.getAll('participantIds').map(String)
   };
 }
@@ -91,7 +92,7 @@ export async function createEventAction(
       event_year: fields.year,
       event_month: fields.month,
       event_day: fields.day,
-      privacy: fields.privacy
+      privacy: fields.privacy ?? 'family'
     })
     .select('id')
     .single();
@@ -137,7 +138,9 @@ export async function updateEventAction(
       event_year: fields.year,
       event_month: fields.month,
       event_day: fields.day,
-      privacy: fields.privacy
+      // A missing/invalid privacy value must never rewrite the stored
+      // level (same preserve-on-invalid rule as updatePhotoAction).
+      ...(fields.privacy ? {privacy: fields.privacy} : {})
     })
     .eq('id', eventId)
     .select('id')
@@ -173,6 +176,7 @@ export async function updateEventAction(
   revalidatePath(`/events/${eventId}`);
   revalidatePath('/events');
   revalidatePath('/timeline');
+  revalidatePath('/dashboard');
   return {error: null, ok: true};
 }
 
@@ -180,8 +184,12 @@ export async function deleteEventAction(formData: FormData): Promise<void> {
   const eventId = String(formData.get('eventId') ?? '');
   if (!eventId) return;
   const supabase = await createClient();
-  await supabase.from('events').delete().eq('id', eventId);
+  const {error} = await supabase.from('events').delete().eq('id', eventId);
+  if (error) {
+    redirect(`/events/${eventId}?error=delete`);
+  }
   revalidatePath('/events');
   revalidatePath('/timeline');
+  revalidatePath('/dashboard');
   redirect('/events');
 }

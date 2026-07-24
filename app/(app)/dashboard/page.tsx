@@ -16,10 +16,11 @@ import {
 import {computeTreeLayout} from '@/lib/tree';
 import {upcomingCelebrations} from '@/lib/celebrations';
 import {createSignedUrls} from '@/lib/media';
-import {formatDate, formatPartialDate} from '@/lib/dates';
-import {EVENT_TYPES} from '@/lib/event-types';
-import {Button, Card, EmptyState} from '@/components/ui';
+import {formatDate} from '@/lib/dates';
+import {loadFeed} from '@/lib/feed/load';
+import {Card} from '@/components/ui';
 import {FamilyTreeView} from '@/components/tree/FamilyTreeView';
+import {FeedList} from '@/components/feed/FeedList';
 import {PendingClaims, type PendingClaim} from '@/components/invite/PendingClaims';
 
 const CELEBRATION_WINDOW_DAYS = 30;
@@ -39,7 +40,12 @@ function immediateSubgraph(graph: FamilyGraph, focusId: string): FamilyGraph {
   };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams: Promise<{feedBefore?: string}>;
+}) {
+  const {feedBefore} = await searchParams;
   const ctx = await getFamilyContext();
   if (ctx === 'no-user') redirect('/login');
   if (ctx === 'no-family') redirect('/onboarding');
@@ -47,6 +53,20 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   const graph = await loadFamilyGraph(supabase, ctx.family.id);
+
+  // Post-takeover review nudge: the user claimed a profile that was
+  // guardian-managed and has not walked through the review screen yet.
+  let showTakeoverReview = false;
+  if (ctx.person && ctx.person.takeover_reviewed_at === null) {
+    const {data: endedGuardianship} = await supabase
+      .from('guardianships')
+      .select('id')
+      .eq('person_id', ctx.person.id)
+      .not('ended_at', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    showTakeoverReview = Boolean(endedGuardianship);
+  }
 
   // Mini tree around me (2–3 generations, no grandparents).
   let miniLayout = null;
@@ -124,34 +144,43 @@ export default async function DashboardPage() {
     }
   }
 
-  // Recently added items.
-  const [{data: recentPhotos}, {data: recentEvents}] = await Promise.all([
-    supabase
-      .from('photos')
-      .select('id, storage_path_thumb, kind')
-      .eq('family_id', ctx.family.id)
-      .order('created_at', {ascending: false})
-      .limit(6),
-    supabase
-      .from('events')
-      .select('id, type, title, event_year, event_month, event_day, created_at')
-      .eq('family_id', ctx.family.id)
-      .order('created_at', {ascending: false})
-      .limit(5)
-  ]);
-  const recentThumbUrls = await createSignedUrls(
-    supabase,
-    'media',
-    (recentPhotos ?? [])
-      .map((photo) => photo.storage_path_thumb)
-      .filter((path): path is string => Boolean(path))
-  );
+  // Family activity feed (replaces the Stage 1 "recently added" list).
+  // Today's birthdays/anniversaries are generated at read time. An
+  // invalid cursor is ignored rather than yielding an empty feed.
+  const validFeedBefore =
+    feedBefore && !Number.isNaN(new Date(feedBefore).getTime()) ? feedBefore : null;
+  const feedPage = await loadFeed(supabase, ctx.family.id, graph, {
+    before: validFeedBefore
+  });
+  const todayCelebrations = validFeedBefore
+    ? []
+    : upcomingCelebrations(
+        [...graph.persons.values()],
+        (weddingEvents ?? []).map((event) => ({
+          ...event,
+          participantNames: (weddingParticipants ?? [])
+            .filter((row) => row.event_id === event.id)
+            .map((row) => graph.persons.get(row.person_id)?.first_name ?? '')
+            .filter(Boolean)
+        })),
+        0,
+        new Date()
+      );
 
   return (
     <div className="space-y-5">
       <h1 className="font-heading text-2xl">
         {t('dashboard.greeting', {name: ctx.person?.first_name ?? ''})}
       </h1>
+
+      {showTakeoverReview ? (
+        <div className="rounded-lg border border-amber/30 bg-amber-soft px-4 py-3 text-sm text-amber-strong">
+          {t('takeover.reviewNudge')}{' '}
+          <Link href="/profile-review" className="font-medium underline">
+            {t('takeover.reviewNudgeAction')}
+          </Link>
+        </div>
+      ) : null}
 
       <PendingClaims claims={pendingClaims} />
 
@@ -206,71 +235,16 @@ export default async function DashboardPage() {
         </Card>
 
         <Card>
-          <h2 className="font-heading mb-3 text-lg">{t('dashboard.recentTitle')}</h2>
-          {(recentPhotos ?? []).length === 0 && (recentEvents ?? []).length === 0 ? (
-            <EmptyState
-              icon="✨"
-              title={t('dashboard.recentEmptyTitle')}
-              hint={t('dashboard.recentEmptyHint')}
-              action={
-                <Link href="/events/new">
-                  <Button>{t('timeline.emptyAction')}</Button>
-                </Link>
-              }
-            />
-          ) : (
-            <div className="space-y-4">
-              {(recentPhotos ?? []).length > 0 ? (
-                <ul className="flex gap-1.5 overflow-x-auto">
-                  {(recentPhotos ?? []).map((photo) => {
-                    const url = photo.storage_path_thumb
-                      ? recentThumbUrls.get(photo.storage_path_thumb)
-                      : null;
-                    return (
-                      <li key={photo.id} className="shrink-0">
-                        <Link
-                          href={`/photos/${photo.id}`}
-                          aria-label={t('photos.openPhoto')}
-                          className="block h-16 w-16 overflow-hidden rounded-lg border border-border bg-surface-sunken"
-                        >
-                          {url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={url} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <span className="flex h-full w-full items-center justify-center text-xl">
-                              {photo.kind === 'video' ? '🎞️' : '🖼️'}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : null}
-              <ul className="space-y-1">
-                {(recentEvents ?? []).map((event) => (
-                  <li key={event.id}>
-                    <Link
-                      href={`/events/${event.id}`}
-                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-sunken"
-                    >
-                      <span aria-hidden>{EVENT_TYPES[event.type].icon}</span>
-                      <span className="min-w-0 flex-1 truncate">
-                        {event.title ?? t(`events.types.${event.type}`)}
-                      </span>
-                      <span className="text-xs text-ink-faint">
-                        {formatPartialDate({
-                          year: event.event_year,
-                          month: event.event_month,
-                          day: event.event_day
-                        })}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <h2 className="font-heading mb-3 text-lg">{t('feed.title')}</h2>
+          <FeedList
+            items={feedPage.items}
+            todayCelebrations={todayCelebrations}
+            loadMoreHref={
+              feedPage.nextCursor
+                ? `/dashboard?feedBefore=${encodeURIComponent(feedPage.nextCursor)}`
+                : null
+            }
+          />
         </Card>
       </div>
     </div>

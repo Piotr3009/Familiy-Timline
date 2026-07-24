@@ -3,7 +3,11 @@ import {redirect} from 'next/navigation';
 import {getLocale, getTranslations} from 'next-intl/server';
 import {createClient} from '@/lib/supabase/server';
 import {getFamilyContext} from '@/lib/family';
-import {setLocaleAction, setThemeAction} from '@/lib/settings/actions';
+import {
+  setEmailNotificationsAction,
+  setLocaleAction,
+  setThemeAction
+} from '@/lib/settings/actions';
 import {signOutAction} from '@/lib/auth/actions';
 import {formatDateTime} from '@/lib/dates';
 import {isTheme, locales, THEME_COOKIE, type Theme} from '@/i18n/config';
@@ -28,6 +32,7 @@ export default async function SettingsPage() {
   const cookieStore = await cookies();
   const rawTheme = cookieStore.get(THEME_COOKIE)?.value ?? 'light';
   const currentTheme: Theme = isTheme(rawTheme) ? rawTheme : 'light';
+  const emailNotificationsOn = ctx.user.user_metadata?.email_notifications !== false;
 
   let openReports: {
     id: string;
@@ -86,6 +91,26 @@ export default async function SettingsPage() {
               <input type="hidden" name="theme" value={theme} />
               <button type="submit" className={choiceClass(currentTheme === theme)}>
                 {t(`settings.themes.${theme}`)}
+              </button>
+            </form>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="font-heading mb-3 text-lg">{t('settings.emailNotifications')}</h2>
+        <p className="mb-3 text-sm text-ink-muted">{t('settings.emailNotificationsHint')}</p>
+        <div className="flex gap-2">
+          {(['on', 'off'] as const).map((option) => (
+            <form key={option} action={setEmailNotificationsAction}>
+              <input type="hidden" name="enabled" value={option} />
+              <button
+                type="submit"
+                className={choiceClass(emailNotificationsOn === (option === 'on'))}
+              >
+                {option === 'on'
+                  ? t('settings.emailNotificationsOn')
+                  : t('settings.emailNotificationsOff')}
               </button>
             </form>
           ))}

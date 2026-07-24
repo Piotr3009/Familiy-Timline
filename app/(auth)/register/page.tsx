@@ -9,7 +9,11 @@ export default async function RegisterPage({
 }) {
   const {next} = await searchParams;
   const t = await getTranslations();
-  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard';
+  // Backslashes rejected too: '/\evil.com' parses as '//evil.com'.
+  const safeNext =
+    next && next.startsWith('/') && !next.startsWith('//') && !next.includes('\\')
+      ? next
+      : '/dashboard';
 
   return (
     <Card>

@@ -134,7 +134,9 @@
     "deleteProfile": "Delete this profile",
     "deleteConfirm": "Delete this profile and its relationships?",
     "timelineOf": "{name}'s timeline",
-    "noEventsYet": "No events yet — add one and include them as a participant."
+    "noEventsYet": "No events yet — add one and include them as a participant.",
+    "minorInviteBlocked": "Invitations are unavailable while this person is a minor. Once they become an adult, a guardian can invite them to take over their profile.",
+    "deleteFailed": "The profile could not be removed. Please try again."
   },
   "privacy": {
     "private": "Only me",
@@ -168,6 +170,32 @@
       "divorced": "Divorced",
       "former_partner": "Former partners",
       "widowed": "Widowed"
+    },
+    "title": "Relationships",
+    "empty": "No relationships recorded yet.",
+    "addButton": "Add relationship",
+    "selectPerson": "Who is the partner?",
+    "addNewHint": "Someone not in the tree yet? Use “Add relative” in the family section instead.",
+    "statusLabel": "Status",
+    "startDate": "Together since",
+    "weddingDate": "Wedding",
+    "separationDate": "Separation",
+    "divorceDate": "Divorce",
+    "sharedChildren": "Children together",
+    "markWidowed": "Mark as widowed",
+    "markWidowedHint": "{name} is recorded as deceased — you can set this relationship to “Widowed”.",
+    "errors": {
+      "duplicateActive": "These two already have an ongoing relationship record.",
+      "needsUnclaimed": "Two claimed profiles cannot be linked directly — consent-based linking arrives in a later stage.",
+      "datesRejected": "The dates are in the wrong order.",
+      "notAllowed": "You cannot edit this relationship.",
+      "wedding_before_start": "The wedding date cannot be before the start of the relationship.",
+      "separation_before_wedding": "The separation date cannot be before the wedding.",
+      "separation_before_start": "The separation date cannot be before the start of the relationship.",
+      "divorce_before_separation": "The divorce date cannot be before the separation.",
+      "divorce_before_wedding": "The divorce date cannot be before the wedding.",
+      "divorce_before_start": "The divorce date cannot be before the start of the relationship.",
+      "invalid_date": "One of the dates is not a valid date."
     }
   },
   "tree": {
@@ -176,7 +204,11 @@
     "hint": "Showing up to three generations around {name}. Tap a card to open the profile; drag or scroll to pan.",
     "emptyTitle": "Your tree is waiting to grow",
     "emptyHint": "Add yourself and your closest family to see the first branches.",
-    "emptyAction": "Add family members"
+    "emptyAction": "Add family members",
+    "filterLabel": "Relationships shown",
+    "filterCurrent": "Current only",
+    "filterAll": "All (including past)",
+    "endedYear": "ended {year}"
   },
   "invite": {
     "invalid": "This invitation link is not valid. Ask your family member to check it or send a new one.",
@@ -239,6 +271,18 @@
       "heading": "Welcome to the family!",
       "body": "Your claim was approved — the profile of {personName} now belongs to you. You control what it shows and who can see it.",
       "cta": "Go to my family"
+    },
+    "invitationClaimed": {
+      "subject": "Someone claimed {personName}'s profile",
+      "heading": "A profile claim awaits your approval",
+      "body": "Someone used an invitation link to claim {personName}'s profile. Please check that it is really them and approve or reject the claim.",
+      "cta": "Review the claim"
+    },
+    "removalRequested": {
+      "subject": "A family member asks you to remove an item",
+      "heading": "Removal request",
+      "body": "{requesterName} reviewed their profile and asks you to remove an item they appear in. Please have a look.",
+      "cta": "Open the item"
     }
   },
   "photos": {
@@ -366,7 +410,13 @@
     "not_authenticated": "Please sign in first.",
     "media_quota_exceeded": "You have reached your upload limit.",
     "file_size_exceeded": "This file is too large.",
-    "video_duration_exceeded": "This video is too long."
+    "video_duration_exceeded": "This video is too long.",
+    "relationship_escalation_blocked": "Restoring a relationship between two claimed profiles needs a family admin.",
+    "last_guardian": "The last guardian of a profile cannot be removed.",
+    "person_is_minor": "This profile belongs to a minor — an invitation becomes possible once they are an adult.",
+    "comment_too_long": "The comment is too long.",
+    "comment_not_found": "This comment no longer exists.",
+    "not_allowed_to_delete_comment": "Only the author or a family admin can delete this comment."
   },
   "settings": {
     "title": "Settings",
@@ -389,6 +439,153 @@
     "noReports": "No open reports. All is well in the family.",
     "reportHandled": "Report handled.",
     "markResolved": "Mark resolved",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "emailNotifications": "Email notifications",
+    "emailNotificationsHint": "Important updates (profile claims, approvals, removal requests) can also reach you by email. Everything else stays in the app.",
+    "emailNotificationsOn": "On",
+    "emailNotificationsOff": "Off"
+  },
+  "history": {
+    "title": "History",
+    "empty": "No changes recorded yet.",
+    "created": "Created",
+    "deleted": "Deleted",
+    "fieldChange": "{field}: {from} → {to}",
+    "noValue": "—",
+    "yes": "yes",
+    "no": "no",
+    "valueUpdated": "updated",
+    "revert": "Undo",
+    "unknownActor": "A family member",
+    "relationshipWith": "Relationship with {name}",
+    "errors": {
+      "revertFailed": "This change could not be undone — it may conflict with newer data.",
+      "notAllowed": "You cannot undo changes on this item."
+    },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "maidenName": "Maiden name",
+      "gender": "Gender",
+      "birthYear": "Birth year",
+      "birthMonth": "Birth month",
+      "birthDay": "Birth day",
+      "birthPlace": "Birth place",
+      "deathYear": "Death year",
+      "deathMonth": "Death month",
+      "deathDay": "Death day",
+      "deathPlace": "Death place",
+      "isDeceased": "Deceased",
+      "bio": "Biography",
+      "avatar": "Profile photo",
+      "lifeDetailsPrivacy": "Life details privacy",
+      "title": "Title",
+      "description": "Description",
+      "location": "Place",
+      "eventYear": "Event year",
+      "eventMonth": "Event month",
+      "eventDay": "Event day",
+      "privacy": "Privacy",
+      "type": "Type",
+      "status": "Status",
+      "startDate": "Together since",
+      "weddingDate": "Wedding date",
+      "separationDate": "Separation date",
+      "divorceDate": "Divorce date",
+      "parentRole": "Parent role",
+      "endedAt": "Ended",
+      "takenYear": "Year taken",
+      "takenMonth": "Month taken",
+      "takenDay": "Day taken",
+      "linkedEvent": "Linked event",
+      "takeoverReviewed": "Profile review"
+    }
+  },
+  "guardians": {
+    "title": "Guardians",
+    "empty": "No guardians recorded yet. A guardian manages this profile until the person can take it over.",
+    "addButton": "Add guardian",
+    "selectGuardian": "Who is the guardian?",
+    "typeLabel": "Role",
+    "types": {
+      "parent": "Parent",
+      "legal_guardian": "Legal guardian"
+    },
+    "remove": "Remove",
+    "minorNote": "This profile belongs to a minor. Guardians manage it, and its visibility is capped at family level.",
+    "errors": {
+      "notAllowed": "Only guardians can manage this profile's guardians.",
+      "alreadyGuardian": "This person is already an active guardian."
+    }
+  },
+  "takeover": {
+    "adultBanner": "{name} is now an adult — invite them below to take over their profile.",
+    "reviewNudge": "Your profile was managed by guardians until now. Take a moment to review what is on it.",
+    "reviewNudgeAction": "Review my profile",
+    "reviewTitle": "Welcome to your profile",
+    "reviewIntro": "Your family kept this profile for you. Here is everything on it — keep what you like, hide what you don't. Hiding removes you from the item; the item itself stays with the person who added it.",
+    "profileSection": "Your profile details",
+    "profileEmpty": "No details have been filled in yet.",
+    "profileHint": "You can edit every field and its privacy on your profile page.",
+    "openProfile": "Open my profile",
+    "photosSection": "{count, plural, =0 {Photos of you} one {# photo of you} other {# photos of you}}",
+    "photosEmpty": "You are not tagged in any photos.",
+    "untitledPhoto": "Untitled photo",
+    "eventsSection": "{count, plural, =0 {Events with you} one {# event with you} other {# events with you}}",
+    "eventsEmpty": "You are not part of any events.",
+    "hide": "Hide me",
+    "finish": "Looks good — finish review",
+    "requestRemoval": "Ask to remove",
+    "removalRequested": "Request sent"
+  },
+  "feed": {
+    "title": "Family activity",
+    "empty": "Nothing here yet — add people, photos and events to bring the feed to life.",
+    "loadMore": "Show older activity",
+    "unknownActor": "Someone",
+    "items": {
+      "person_added": "{actor} added {name} to the tree",
+      "person_claimed": "{name} joined and took over their profile",
+      "photo_added": "{actor} added {count, plural, one {a photo} other {# photos}}",
+      "event_added": "{actor} added the event “{title}”",
+      "relationship_added": "{actor} linked {a} and {b} ({status})",
+      "relationship_ended": "The relationship between {a} and {b} changed to “{status}”",
+      "comment_added": "{actor} commented on “{target}”",
+      "birthday_today": "{hasAge, select, yes {{name} turns {age} today!} other {{name} has a birthday today!}}",
+      "anniversary_today": "{names} celebrate their anniversary today"
+    },
+    "targets": {
+      "photo": "a photo"
+    }
+  },
+  "comments": {
+    "title": "Comments",
+    "empty": "No comments yet — be the first to write something.",
+    "placeholder": "Write a comment…",
+    "send": "Post comment",
+    "edited": "edited",
+    "errors": {
+      "empty": "The comment cannot be empty.",
+      "tooLong": "The comment is too long.",
+      "notAllowed": "You cannot comment here.",
+      "editWindowOver": "The editing window for this comment has closed."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "You are all caught up.",
+    "markAllRead": "Mark all as read",
+    "bellLabel": "Notifications",
+    "bellLabelUnread": "Notifications, {count} unread",
+    "items": {
+      "invitation_claimed": "Someone claimed {name}'s profile — review and approve it.",
+      "claim_approved": "Your claim was approved — {name}'s profile is now yours.",
+      "tagged_in_photo": "You were tagged in a photo.",
+      "comment_on_your_item": "Someone commented on your item.",
+      "comment_after_you": "There is a new comment where you commented.",
+      "birthday_reminder": "{name} has a birthday today!",
+      "adult_takeover_available": "{name} is now an adult — invite them to take over their profile.",
+      "removal_requested": "{name} asks you to remove an item they appear in."
+    }
   }
 }

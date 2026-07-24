@@ -92,7 +92,7 @@ export function EditPhotoForm({
             {persons.map((person) => (
               <label
                 key={person.id}
-                className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-ink-muted has-checked:border-amber has-checked:bg-amber-soft has-checked:text-amber-strong"
+                className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-ink-muted has-checked:border-amber has-checked:bg-amber-soft has-checked:text-amber-strong has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber"
               >
                 <input
                   type="checkbox"
