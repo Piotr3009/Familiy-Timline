@@ -6,7 +6,8 @@ import {
   siblingsOf,
   sortByBirth,
   CURRENT_PARTNER_STATUSES,
-  type FamilyGraph
+  type FamilyGraph,
+  type PartnerLink
 } from '@/lib/persons/relations';
 
 /**
@@ -63,7 +64,25 @@ export function computeTreeLayout(
 
   const parents = sortByBirth(parentsOf(graph, focusId)).slice(0, 2);
   const siblings = sortByBirth(siblingsOf(graph, focusId));
-  const partnerLinks = partnersOf(graph, focusId);
+  // A remarried pair has SEVERAL partner records (divorced + married):
+  // render one card per PERSON, preferring their current record.
+  const partnerLinksRaw = partnersOf(graph, focusId);
+  const linkByPerson = new Map<string, PartnerLink>();
+  for (const link of partnerLinksRaw) {
+    const existing = linkByPerson.get(link.person.id);
+    const linkIsCurrent = CURRENT_PARTNER_STATUSES.includes(
+      link.relationship.status as (typeof CURRENT_PARTNER_STATUSES)[number]
+    );
+    const existingIsCurrent =
+      existing !== undefined &&
+      CURRENT_PARTNER_STATUSES.includes(
+        existing.relationship.status as (typeof CURRENT_PARTNER_STATUSES)[number]
+      );
+    if (!existing || (linkIsCurrent && !existingIsCurrent)) {
+      linkByPerson.set(link.person.id, link);
+    }
+  }
+  const partnerLinks = [...linkByPerson.values()];
   const currentPartners = partnerLinks.filter((link) =>
     CURRENT_PARTNER_STATUSES.includes(
       link.relationship.status as (typeof CURRENT_PARTNER_STATUSES)[number]

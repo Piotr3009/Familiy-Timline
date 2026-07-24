@@ -135,7 +135,8 @@
     "deleteConfirm": "Delete this profile and its relationships?",
     "timelineOf": "{name}'s timeline",
     "noEventsYet": "No events yet — add one and include them as a participant.",
-    "minorInviteBlocked": "Invitations are unavailable while this person is a minor. Once they become an adult, a guardian can invite them to take over their profile."
+    "minorInviteBlocked": "Invitations are unavailable while this person is a minor. Once they become an adult, a guardian can invite them to take over their profile.",
+    "deleteFailed": "The profile could not be removed. Please try again."
   },
   "privacy": {
     "private": "Only me",
@@ -552,6 +553,9 @@
       "comment_added": "{actor} commented on “{target}”",
       "birthday_today": "{hasAge, select, yes {{name} turns {age} today!} other {{name} has a birthday today!}}",
       "anniversary_today": "{names} celebrate their anniversary today"
+    },
+    "targets": {
+      "photo": "a photo"
     }
   },
   "comments": {

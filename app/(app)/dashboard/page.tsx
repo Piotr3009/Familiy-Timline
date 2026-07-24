@@ -145,11 +145,14 @@ export default async function DashboardPage({
   }
 
   // Family activity feed (replaces the Stage 1 "recently added" list).
-  // Today's birthdays/anniversaries are generated at read time.
+  // Today's birthdays/anniversaries are generated at read time. An
+  // invalid cursor is ignored rather than yielding an empty feed.
+  const validFeedBefore =
+    feedBefore && !Number.isNaN(new Date(feedBefore).getTime()) ? feedBefore : null;
   const feedPage = await loadFeed(supabase, ctx.family.id, graph, {
-    before: feedBefore ?? null
+    before: validFeedBefore
   });
-  const todayCelebrations = feedBefore
+  const todayCelebrations = validFeedBefore
     ? []
     : upcomingCelebrations(
         [...graph.persons.values()],

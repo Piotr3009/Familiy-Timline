@@ -63,10 +63,14 @@ export async function finishTakeoverReviewAction(): Promise<void> {
   const ctx = await getFamilyContext();
   if (ctx === 'no-user' || ctx === 'no-family' || !ctx.person) redirect('/login');
   const supabase = await createClient();
-  await supabase
+  const {error} = await supabase
     .from('persons')
     .update({takeover_reviewed_at: new Date().toISOString()})
     .eq('id', ctx.person.id);
+  if (error) {
+    // Not persisted — stay on the review page so the nudge remains.
+    redirect('/profile-review');
+  }
   revalidatePath('/dashboard');
   revalidatePath('/profile-review');
   redirect('/dashboard');

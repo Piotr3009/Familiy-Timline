@@ -122,6 +122,12 @@ begin
      or v_person.user_id = coalesce(auth.uid(), v_photo.uploaded_by) then
     return new;
   end if;
+  -- A tag grants the claimed person visibility of any NON-private photo
+  -- (can_view_photo); private photos stay invisible to them, so a
+  -- notification would only leak that a hidden photo exists.
+  if v_photo.privacy = 'private' and v_photo.uploaded_by <> v_person.user_id then
+    return new;
+  end if;
   insert into public.notifications (recipient_user_id, family_id, type, payload)
   values (
     v_person.user_id, v_photo.family_id, 'tagged_in_photo',
@@ -214,6 +220,9 @@ begin
         and p.birth_month = extract(month from current_date)::int
         and p.birth_day = extract(day from current_date)::int
         and public.is_immediate_family(v_person, p.id)
+        -- The birth date itself may be privacy-restricted: only remind
+        -- callers who are allowed to see the person's life details.
+        and public.can_view_person_details(p.id)
       on conflict do nothing;
     end if;
 
@@ -259,6 +268,7 @@ declare
   v_owner uuid;
   v_family uuid;
   v_requester_name text;
+  v_inserted int := 0;
 begin
   if auth.uid() is null then
     raise exception 'not_authenticated' using errcode = 'P0001';
@@ -294,9 +304,12 @@ begin
       p_target_type::text || ':' || p_target_id::text || ':' || auth.uid()::text
     )
     on conflict do nothing;
+    get diagnostics v_inserted = row_count;
   end if;
 
-  return jsonb_build_object('owner_user_id', v_owner);
+  -- `created` tells the caller whether this is a NEW request — repeat
+  -- clicks are deduplicated and must not re-send the owner an email.
+  return jsonb_build_object('owner_user_id', v_owner, 'created', v_inserted > 0);
 end;
 $$;
 

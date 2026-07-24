@@ -135,8 +135,15 @@ async function PersonHistory({
   );
 }
 
-export default async function PersonPage({params}: {params: Promise<{id: string}>}) {
+export default async function PersonPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{id: string}>;
+  searchParams: Promise<{error?: string}>;
+}) {
   const {id} = await params;
+  const {error: pageError} = await searchParams;
   const ctx = await getFamilyContext();
   if (ctx === 'no-user') redirect('/login');
   if (ctx === 'no-family') redirect('/onboarding');
@@ -312,6 +319,9 @@ export default async function PersonPage({params}: {params: Promise<{id: string}
 
   return (
     <div className="space-y-4">
+      {pageError === 'delete' ? (
+        <Alert tone="error">{t('persons.deleteFailed')}</Alert>
+      ) : null}
       {showAdultTakeoverBanner ? (
         <Alert tone="info">
           {t('takeover.adultBanner', {name: person.first_name})}

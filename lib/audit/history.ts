@@ -1,4 +1,5 @@
 import type {AuditLogEntry, Json} from '@/lib/database.types';
+import {formatDate} from '@/lib/dates';
 
 /**
  * Parsing and display helpers for audit_log entries. Kept in a plain
@@ -113,8 +114,12 @@ const TOKEN_NAMESPACES: Record<string, Record<string, string>> = {
   relationships: {
     status: 'relationships.statuses'
   },
-  guardianships: {}
+  guardianships: {
+    type: 'guardians.types'
+  }
 };
+
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
 /**
  * Classifies a raw audit value for rendering. The component translates
@@ -129,6 +134,12 @@ export function classifyValue(table: string, column: string, value: Json | null)
     return {kind: 'token', namespace, token: value};
   }
   if (typeof value === 'number') return {kind: 'text', text: String(value)};
-  if (typeof value === 'string') return {kind: 'text', text: value};
+  if (typeof value === 'string') {
+    // Timestamps (e.g. guardianships.ended_at) print as dates.
+    if (ISO_TIMESTAMP.test(value)) {
+      return {kind: 'text', text: formatDate(value)};
+    }
+    return {kind: 'text', text: value};
+  }
   return {kind: 'opaque'};
 }

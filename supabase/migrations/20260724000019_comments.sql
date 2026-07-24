@@ -55,6 +55,21 @@ begin
       raise exception 'comment_target_not_found' using errcode = 'P0001';
     end if;
     new.family_id := v_target_family;
+    -- Timestamps are server-set: a client-supplied created_at would
+    -- let the author stretch the edit window; deleted_at only ever
+    -- comes from delete_comment.
+    new.created_at := now();
+    new.updated_at := now();
+    new.deleted_at := null;
+    -- Future threading: a parent must live on the same target.
+    if new.parent_id is not null and not exists (
+      select 1 from public.comments parent
+      where parent.id = new.parent_id
+        and parent.target_type = new.target_type
+        and parent.target_id = new.target_id
+    ) then
+      raise exception 'comment_target_not_found' using errcode = 'P0001';
+    end if;
   end if;
   return new;
 end;
@@ -84,10 +99,13 @@ grant execute on function public.can_view_comment_target(public.comment_target, 
 
 alter table public.comments enable row level security;
 
+-- Soft-deleted bodies are gone for everyone (the app never shows them;
+-- without this clause any client could still read them over the API).
 create policy "comments follow target visibility"
   on public.comments for select to authenticated
   using (
-    public.is_family_member(family_id)
+    deleted_at is null
+    and public.is_family_member(family_id)
     and public.can_view_comment_target(target_type, target_id)
   );
 

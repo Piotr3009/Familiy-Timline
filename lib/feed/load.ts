@@ -27,8 +27,9 @@ export type RenderedFeedItem = {
   /** photo_added: visible thumbnails of the batch. */
   photos?: Array<{id: string; thumbUrl: string | null}>;
   photoCount?: number;
-  /** comment_added: target of the comment. */
-  commentTarget?: {href: string; label: string} | null;
+  /** comment_added: target of the comment (label may be empty; the
+   *  renderer falls back to the event-type name or a generic word). */
+  commentTarget?: {href: string; label: string; eventType?: string} | null;
 };
 
 export type FeedPage = {
@@ -191,7 +192,11 @@ export async function loadFeed(
         if (comment.target_type === 'event') {
           const event = eventById.get(comment.target_id);
           base.commentTarget = event
-            ? {href: `/events/${event.id}`, label: event.title ?? event.type}
+            ? {
+                href: `/events/${event.id}`,
+                label: event.title ?? '',
+                eventType: event.type
+              }
             : null;
           base.href = `/events/${comment.target_id}`;
         } else {

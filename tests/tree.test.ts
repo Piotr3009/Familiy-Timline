@@ -158,6 +158,22 @@ describe('computeTreeLayout', () => {
     expect(dashed!.labelAt).toBeDefined();
   });
 
+  it('renders a remarried pair as ONE partner card with a solid line', () => {
+    const graph = buildGraph();
+    // Dad & Mom divorced in 1999 and remarried later: two records.
+    const oldMarriage = rel('r9', 'dad', 'mom', 'partner', 'divorced');
+    oldMarriage.divorce_date = '1999-04-01';
+    graph.relationships.push(oldMarriage);
+    const layout = computeTreeLayout(graph, 'dad')!;
+    const momCards = layout.nodes.filter((node) => node.person.id === 'mom');
+    expect(momCards).toHaveLength(1);
+    // The current (married) record wins: solid line, no end-year label.
+    const partnerEdges = layout.edges.filter((edge) => edge.points.length === 2);
+    expect(partnerEdges).toHaveLength(1);
+    expect(partnerEdges[0]!.dashed).toBe(false);
+    expect(partnerEdges[0]!.endYear ?? null).toBeNull();
+  });
+
   it("hides ended partners with the 'current' filter but keeps their children", () => {
     const graph = buildGraph();
     graph.persons.set('ex', person('ex', 'Ex', 1976));

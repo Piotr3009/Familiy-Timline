@@ -155,12 +155,16 @@ begin
 end;
 $$;
 
+-- Family-gated so it cannot be used to probe other families' persons.
 create or replace function public.person_is_unclaimed(p_person uuid)
 returns boolean
 language sql stable security definer set search_path = public
 as $$
   select exists (
-    select 1 from public.persons where id = p_person and user_id is null
+    select 1 from public.persons
+    where id = p_person
+      and user_id is null
+      and public.is_family_member(family_id)
   );
 $$;
 

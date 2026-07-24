@@ -72,6 +72,18 @@ revoke update on public.relationships from authenticated;
 grant update (parent_role, status, start_date, wedding_date, separation_date, divorce_date)
   on public.relationships to authenticated;
 
+-- Same column-level lockdown for events and photos: created_by /
+-- uploaded_by / family_id (and photo file columns) were updatable by
+-- anyone passing the UPDATE policy, letting a creator forge ownership —
+-- which Stage 2 notifications and comment routing now depend on.
+revoke update on public.events from authenticated;
+grant update (type, title, description, location, event_year, event_month, event_day, privacy)
+  on public.events to authenticated;
+
+revoke update on public.photos from authenticated;
+grant update (taken_year, taken_month, taken_day, location, description, event_id, privacy)
+  on public.photos to authenticated;
+
 -- Block re-activating an ended partner record between two claimed
 -- accounts (mirror of the INSERT hardening in 20260724000013).
 -- Statuses that grant immediate-family visibility: partners, married,

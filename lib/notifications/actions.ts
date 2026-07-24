@@ -70,8 +70,10 @@ export async function requestRemovalAction(
   });
   if (error) return {error: dbErrorKey(error)};
 
-  const ownerUserId = (data as {owner_user_id?: string} | null)?.owner_user_id;
-  if (ownerUserId && ownerUserId !== ctx.user.id) {
+  const result = data as {owner_user_id?: string; created?: boolean} | null;
+  const ownerUserId = result?.owner_user_id;
+  // Repeat clicks are deduplicated in the DB — email only the first time.
+  if (ownerUserId && ownerUserId !== ctx.user.id && result?.created) {
     const requesterName = ctx.person
       ? `${ctx.person.first_name} ${ctx.person.last_name}`
       : '';

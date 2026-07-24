@@ -135,7 +135,8 @@
     "deleteConfirm": "Usunąć ten profil wraz z jego powiązaniami?",
     "timelineOf": "Oś czasu: {name}",
     "noEventsYet": "Brak wydarzeń — dodaj jakieś i oznacz tę osobę jako uczestnika.",
-    "minorInviteBlocked": "Zaproszenia są niedostępne, dopóki ta osoba jest niepełnoletnia. Gdy osiągnie pełnoletność, opiekun będzie mógł zaprosić ją do przejęcia profilu."
+    "minorInviteBlocked": "Zaproszenia są niedostępne, dopóki ta osoba jest niepełnoletnia. Gdy osiągnie pełnoletność, opiekun będzie mógł zaprosić ją do przejęcia profilu.",
+    "deleteFailed": "Nie udało się usunąć profilu. Spróbuj ponownie."
   },
   "privacy": {
     "private": "Tylko ja",
@@ -552,6 +553,9 @@
       "comment_added": "{actor} skomentował(a) „{target}”",
       "birthday_today": "{hasAge, select, yes {{name} kończy dziś {age} lat!} other {{name} ma dziś urodziny!}}",
       "anniversary_today": "{names} świętują dziś rocznicę ślubu"
+    },
+    "targets": {
+      "photo": "zdjęcie"
     }
   },
   "comments": {

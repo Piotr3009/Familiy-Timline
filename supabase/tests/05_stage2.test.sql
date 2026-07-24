@@ -1026,13 +1026,43 @@ select public.delete_comment('cc000000-0000-4000-8000-000000000001');
 do $$
 declare n bigint;
 begin
+  -- Soft-deleted comments vanish from EVERY client read (incl. admin).
   select count(*) into n from public.comments
-  where id = 'cc000000-0000-4000-8000-000000000001' and deleted_at is not null;
-  if n <> 1 then raise exception 'TEST: admin soft delete should set deleted_at'; end if;
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'TEST: soft-deleted comment must be invisible'; end if;
   select count(*) into n from public.feed_items
   where type = 'comment_added'
     and target_id = 'cc000000-0000-4000-8000-000000000001';
   if n <> 0 then raise exception 'TEST: deleted comment must leave the feed'; end if;
+end $$;
+
+-- The row itself still exists with deleted_at set (superuser check).
+reset role;
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001' and deleted_at is not null;
+  if n <> 1 then raise exception 'TEST: soft delete should keep the row with deleted_at'; end if;
+end $$;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+-- Client-supplied timestamps cannot stretch the edit window.
+do $$
+declare v_created timestamptz;
+begin
+  insert into public.comments (id, family_id, target_type, target_id, author_user_id,
+                               body, created_at)
+  values ('cc000000-0000-4000-8000-000000000005', 'f0000000-0000-4000-8000-000000000001',
+          'event', 'e0000000-0000-4000-8000-000000000020',
+          'd0000000-0000-4000-8000-000000000001', 'backdate attempt',
+          '2099-01-01T00:00:00Z');
+  select created_at into v_created from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000005';
+  if v_created > now() + interval '1 minute' then
+    raise exception 'TEST: client-supplied created_at must be overridden';
+  end if;
 end $$;
 
 -- Over-long comments are rejected (config max_comment_length).
@@ -1256,6 +1286,145 @@ declare n bigint;
 begin
   select count(*) into n from public.notifications;
   if n <> 0 then raise exception 'TEST: anon notifications = %, want 0', n; end if;
+end $$;
+
+-- ============================================================
+-- final-review hardening fixes
+-- ============================================================
+
+-- events/photos structural columns are locked at the column level.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    update public.events set created_by = 'd0000000-0000-4000-8000-000000000003'
+    where id = 'e0000000-0000-4000-8000-000000000020';
+    raise exception 'TEST: forging events.created_by must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+  begin
+    update public.photos set uploaded_by = 'd0000000-0000-4000-8000-000000000003'
+    where id = 'b0000000-0000-4000-8000-000000000002';
+    raise exception 'TEST: forging photos.uploaded_by must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- is_minor is family-gated: the stranger (u9) always gets false.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000009', false);
+set role authenticated;
+
+do $$
+begin
+  if public.is_minor('a0000000-0000-4000-8000-000000000020') then
+    raise exception 'TEST: is_minor must not answer for other families';
+  end if;
+  if public.person_is_unclaimed('a0000000-0000-4000-8000-000000000020') then
+    raise exception 'TEST: person_is_unclaimed must not answer for other families';
+  end if;
+end $$;
+
+-- birthday_reminder respects life-details privacy: give Zosia a
+-- birthday today but PRIVATE details; her non-guardian immediate family
+-- must not receive a reminder. (Marek u3 has no relationship to Zosia,
+-- so build the case around Anna: Zosia's details are private and Anna
+-- IS a guardian, so Anna may still be reminded — the negative case is
+-- Piotr's wife-side relatives; simplest reliable probe: a member with
+-- an immediate-family link but no detail access. Katarzyna is Piotr's
+-- sister and not related to Zosia, so instead verify by the absence of
+-- reminders for members without detail visibility overall.)
+reset role;
+update public.persons
+set birth_month = extract(month from current_date)::int,
+    birth_day = extract(day from current_date)::int
+where id = 'a0000000-0000-4000-8000-000000000020';
+-- Zosia's details are already 'private' from the guardianship section;
+-- add a parent_child link so she is immediate family of Piotr's person.
+insert into public.relationships (family_id, person_a_id, person_b_id, type, parent_role, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000020',
+        'parent_child', 'biological',
+        'd0000000-0000-4000-8000-000000000001');
+
+-- Anna (u2): immediate family via her marriage? No — immediate family
+-- resolves person-to-person; Anna is NOT Zosia's parent/sibling here,
+-- so the reminder must not appear for her regardless. The positive
+-- case: Piotr (parent + guardian, may see details) DOES get one.
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+select public.refresh_derived_notifications();
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000001'
+    and type = 'birthday_reminder'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000020';
+  if n <> 1 then
+    raise exception 'TEST: guardian parent should get the birthday reminder, got %', n;
+  end if;
+end $$;
+
+-- Negative case: make Zosia also Anna's child (immediate family), but
+-- Anna's guardianship stays — she can see details. True negative needs
+-- a non-guardian parent: use Marek — parent link, no guardianship, and
+-- Zosia's details are private, so NO reminder for him.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+insert into public.relationships (family_id, person_a_id, person_b_id, type, parent_role, created_by)
+values ('f0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-00000000000a',
+        'a0000000-0000-4000-8000-000000000020',
+        'parent_child', 'step',
+        'd0000000-0000-4000-8000-000000000001');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+select public.refresh_derived_notifications();
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000003'
+    and type = 'birthday_reminder'
+    and payload ->> 'person_id' = 'a0000000-0000-4000-8000-000000000020';
+  if n <> 0 then
+    raise exception 'TEST: private birth date must not produce reminders for non-viewers';
+  end if;
+end $$;
+
+-- tagged_in_photo is not sent for PRIVATE photos the recipient cannot
+-- see: Anna tags Julia (claimed by u5) in her private photo b0..10.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+insert into public.photo_persons (photo_id, person_id)
+values ('b0000000-0000-4000-8000-000000000010', 'a0000000-0000-4000-8000-000000000007');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000005', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.notifications
+  where recipient_user_id = 'd0000000-0000-4000-8000-000000000005'
+    and type = 'tagged_in_photo'
+    and payload ->> 'photo_id' = 'b0000000-0000-4000-8000-000000000010';
+  if n <> 0 then
+    raise exception 'TEST: private photo tags must not notify (they leak existence)';
+  end if;
 end $$;
 
 reset role;

@@ -72,11 +72,14 @@ export async function FeedList({
             ? t(`relationships.statuses.${item.pair.status}`)
             : ''
         });
-      case 'comment_added':
-        return t('feed.items.comment_added', {
-          actor,
-          target: item.commentTarget?.label ?? ''
-        });
+      case 'comment_added': {
+        const target =
+          item.commentTarget?.label ||
+          (item.commentTarget?.eventType
+            ? t(`events.types.${item.commentTarget.eventType}`)
+            : t('feed.targets.photo'));
+        return t('feed.items.comment_added', {actor, target});
+      }
       default:
         return '';
     }

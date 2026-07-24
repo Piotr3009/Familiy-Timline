@@ -16,11 +16,14 @@
 --    create_invitation (and mirrored in the UI).
 -- ============================================================
 
+-- Family-gated: for callers outside the person's family the answer is
+-- always false — the function must not be a cross-family probe.
 create or replace function public.is_minor(p_person uuid)
 returns boolean
 language sql stable security definer set search_path = public
 as $$
   select case
+    when not public.is_family_member(p.family_id) then false
     when p.birth_year is null or p.is_deceased then false
     else (
       (extract(year from current_date)::int - p.birth_year)
