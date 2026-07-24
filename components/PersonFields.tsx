@@ -15,7 +15,7 @@ export function PartialDateFields({
   prefix,
   defaults
 }: {
-  prefix: 'birth' | 'death';
+  prefix: 'birth' | 'death' | 'taken' | 'event';
   defaults?: {year: number | null; month: number | null; day: number | null};
 }) {
   const t = useTranslations('persons');

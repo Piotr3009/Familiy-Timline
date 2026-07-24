@@ -167,6 +167,14 @@
       "widowed": "Widowed"
     }
   },
+  "tree": {
+    "title": "Family tree",
+    "centerOn": "Center on",
+    "hint": "Showing up to three generations around {name}. Tap a card to open the profile; drag or scroll to pan.",
+    "emptyTitle": "Your tree is waiting to grow",
+    "emptyHint": "Add yourself and your closest family to see the first branches.",
+    "emptyAction": "Add family members"
+  },
   "invite": {
     "invalid": "This invitation link is not valid. Ask your family member to check it or send a new one.",
     "rateLimited": "Too many attempts from your network — please try again in a little while.",
@@ -228,6 +236,64 @@
       "heading": "Welcome to the family!",
       "body": "Your claim was approved — the profile of {personName} now belongs to you. You control what it shows and who can see it.",
       "cta": "Go to my family"
+    }
+  },
+  "photos": {
+    "title": "Family photos",
+    "everyone": "Everyone",
+    "addButton": "Add photo or video",
+    "emptyTitle": "The album is still empty",
+    "emptyHint": "Old photographs deserve a warm home. Upload the first one and tag who is in it.",
+    "addFirst": "Upload the first photo",
+    "uploadTitle": "Add a photo or video",
+    "quotaStatus": "Photos: {photosUsed} of {photosMax} · Videos: {videosUsed} of {videosMax}",
+    "fileLabel": "Photo or video",
+    "limitsHint": "Photos are compressed automatically. Videos play back as uploaded.",
+    "takenDate": "When was it taken?",
+    "location": "Where was it taken?",
+    "description": "Description",
+    "linkedEvent": "Linked event",
+    "noEvent": "No event",
+    "whoIsInIt": "Who is in it?",
+    "privacyLabel": "Who can see it",
+    "uploaded": "Uploaded! Add another one or head back to the album.",
+    "uploading": "Uploading…",
+    "uploadButton": "Upload",
+    "backToGallery": "All photos",
+    "taggedPersons": "In this photo",
+    "deleteButton": "Delete photo",
+    "openOriginal": "Open original size",
+    "errors": {
+      "fileRequired": "Please choose a photo or video first.",
+      "unsupportedType": "Only photos and videos can be uploaded.",
+      "videoUnreadable": "This video could not be read. Try a different file.",
+      "imageUnreadable": "This image could not be read. Try a different file.",
+      "uploadFailed": "The upload did not complete. Please try again.",
+      "notAllowed": "You cannot edit this photo."
+    }
+  },
+  "events": {
+    "types": {
+      "birth": "Birth",
+      "baptism": "Baptism",
+      "first_communion": "First communion",
+      "school_graduation": "School graduation",
+      "university": "University",
+      "wedding": "Wedding",
+      "divorce": "Divorce",
+      "moving_home": "Moving home",
+      "home_purchase": "Home purchase",
+      "emigration": "Emigration",
+      "job_start": "New job",
+      "business_start": "Business started",
+      "child_birth": "Birth of a child",
+      "family_gathering": "Family gathering",
+      "anniversary": "Anniversary",
+      "death": "Death",
+      "funeral": "Funeral",
+      "achievement": "Achievement",
+      "travel": "Travel",
+      "other": "Other"
     }
   },
   "errors": {

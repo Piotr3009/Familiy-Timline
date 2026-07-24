@@ -167,6 +167,14 @@
       "widowed": "Wdowieństwo"
     }
   },
+  "tree": {
+    "title": "Drzewo rodzinne",
+    "centerOn": "Wyśrodkuj na",
+    "hint": "Widok do trzech pokoleń wokół osoby: {name}. Dotknij karty, aby otworzyć profil; przeciągaj lub przewijaj, aby się poruszać.",
+    "emptyTitle": "Twoje drzewo czeka, aby urosnąć",
+    "emptyHint": "Dodaj siebie i najbliższą rodzinę, aby zobaczyć pierwsze gałęzie.",
+    "emptyAction": "Dodaj członków rodziny"
+  },
   "invite": {
     "invalid": "Ten link z zaproszeniem jest nieprawidłowy. Poproś kogoś z rodziny o sprawdzenie lub wysłanie nowego.",
     "rateLimited": "Zbyt wiele prób z Twojej sieci — spróbuj ponownie za chwilę.",
@@ -228,6 +236,64 @@
       "heading": "Witaj w rodzinie!",
       "body": "Twoje zgłoszenie zostało zatwierdzone — profil {personName} należy teraz do Ciebie. Ty decydujesz, co pokazuje i kto może go oglądać.",
       "cta": "Przejdź do mojej rodziny"
+    }
+  },
+  "photos": {
+    "title": "Rodzinne zdjęcia",
+    "everyone": "Wszyscy",
+    "addButton": "Dodaj zdjęcie lub wideo",
+    "emptyTitle": "Album jest jeszcze pusty",
+    "emptyHint": "Stare fotografie zasługują na ciepłe miejsce. Prześlij pierwszą i oznacz, kto jest na niej.",
+    "addFirst": "Prześlij pierwsze zdjęcie",
+    "uploadTitle": "Dodaj zdjęcie lub wideo",
+    "quotaStatus": "Zdjęcia: {photosUsed} z {photosMax} · Wideo: {videosUsed} z {videosMax}",
+    "fileLabel": "Zdjęcie lub wideo",
+    "limitsHint": "Zdjęcia są automatycznie kompresowane. Wideo odtwarzane jest w przesłanej postaci.",
+    "takenDate": "Kiedy je zrobiono?",
+    "location": "Gdzie je zrobiono?",
+    "description": "Opis",
+    "linkedEvent": "Powiązane wydarzenie",
+    "noEvent": "Bez wydarzenia",
+    "whoIsInIt": "Kto jest na zdjęciu?",
+    "privacyLabel": "Kto może je zobaczyć",
+    "uploaded": "Przesłano! Dodaj kolejne albo wróć do albumu.",
+    "uploading": "Przesyłanie…",
+    "uploadButton": "Prześlij",
+    "backToGallery": "Wszystkie zdjęcia",
+    "taggedPersons": "Na tym zdjęciu",
+    "deleteButton": "Usuń zdjęcie",
+    "openOriginal": "Otwórz w pełnym rozmiarze",
+    "errors": {
+      "fileRequired": "Najpierw wybierz zdjęcie lub wideo.",
+      "unsupportedType": "Można przesyłać tylko zdjęcia i wideo.",
+      "videoUnreadable": "Nie udało się odczytać tego wideo. Spróbuj z innym plikiem.",
+      "imageUnreadable": "Nie udało się odczytać tego obrazu. Spróbuj z innym plikiem.",
+      "uploadFailed": "Przesyłanie nie powiodło się. Spróbuj ponownie.",
+      "notAllowed": "Nie możesz edytować tego zdjęcia."
+    }
+  },
+  "events": {
+    "types": {
+      "birth": "Narodziny",
+      "baptism": "Chrzest",
+      "first_communion": "Pierwsza komunia",
+      "school_graduation": "Zakończenie szkoły",
+      "university": "Studia",
+      "wedding": "Ślub",
+      "divorce": "Rozwód",
+      "moving_home": "Przeprowadzka",
+      "home_purchase": "Zakup domu",
+      "emigration": "Emigracja",
+      "job_start": "Nowa praca",
+      "business_start": "Założenie firmy",
+      "child_birth": "Narodziny dziecka",
+      "family_gathering": "Spotkanie rodzinne",
+      "anniversary": "Rocznica",
+      "death": "Śmierć",
+      "funeral": "Pogrzeb",
+      "achievement": "Osiągnięcie",
+      "travel": "Podróż",
+      "other": "Inne"
     }
   },
   "errors": {

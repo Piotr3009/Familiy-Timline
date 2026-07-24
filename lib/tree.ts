@@ -1,0 +1,224 @@
+import type {VisiblePerson} from '@/lib/database.types';
+import {
+  childrenOf,
+  parentsOf,
+  partnersOf,
+  siblingsOf,
+  sortByBirth,
+  CURRENT_PARTNER_STATUSES,
+  type FamilyGraph
+} from '@/lib/persons/relations';
+
+/**
+ * Layout for the Stage 1 tree: up to 4 rows around a focus person —
+ * grandparents, parents, focus row (siblings + focus + partners),
+ * children. Pure math in "column units"; the renderer converts to px.
+ */
+
+export const CARD_W = 128;
+export const CARD_H = 148;
+export const GAP_X = 24;
+export const GAP_Y = 64;
+
+const COL = CARD_W + GAP_X;
+const ROW = CARD_H + GAP_Y;
+
+export type TreeNode = {
+  person: VisiblePerson;
+  /** Pixel position of the card's top-left corner. */
+  x: number;
+  y: number;
+  isFocus: boolean;
+};
+
+export type TreeEdge = {
+  /** Poly-line points in px. */
+  points: Array<{x: number; y: number}>;
+  dashed: boolean;
+};
+
+export type TreeLayout = {
+  nodes: TreeNode[];
+  edges: TreeEdge[];
+  width: number;
+  height: number;
+};
+
+type Placed = {person: VisiblePerson; col: number; row: number; isFocus?: boolean};
+
+export function computeTreeLayout(graph: FamilyGraph, focusId: string): TreeLayout | null {
+  const focus = graph.persons.get(focusId);
+  if (!focus) return null;
+
+  const parents = sortByBirth(parentsOf(graph, focusId)).slice(0, 2);
+  const siblings = sortByBirth(siblingsOf(graph, focusId));
+  const partnerLinks = partnersOf(graph, focusId);
+  const currentPartners = partnerLinks.filter((link) =>
+    CURRENT_PARTNER_STATUSES.includes(
+      link.relationship.status as (typeof CURRENT_PARTNER_STATUSES)[number]
+    )
+  );
+  const endedPartners = partnerLinks.filter((link) => !currentPartners.includes(link));
+  const orderedPartners = [...currentPartners, ...endedPartners];
+  const children = sortByBirth(childrenOf(graph, focusId));
+
+  // Row 2 (focus row): siblings left, focus, partners right.
+  const focusRow: Placed[] = [];
+  siblings.forEach((person, index) => focusRow.push({person, col: index, row: 2}));
+  const focusCol = siblings.length;
+  focusRow.push({person: focus, col: focusCol, row: 2, isFocus: true});
+  orderedPartners.forEach((link, index) =>
+    focusRow.push({person: link.person, col: focusCol + 1 + index, row: 2})
+  );
+
+  // Row 1: parents centered over the focus.
+  const parentPlacements: Placed[] = [];
+  if (parents.length === 1) {
+    parentPlacements.push({person: parents[0]!, col: focusCol, row: 1});
+  } else if (parents.length === 2) {
+    parentPlacements.push({person: parents[0]!, col: focusCol - 0.5, row: 1});
+    parentPlacements.push({person: parents[1]!, col: focusCol + 0.5, row: 1});
+  }
+
+  // Row 0: each parent's parents, centered over that parent, then swept
+  // left-to-right to remove overlaps.
+  type GrandGroup = {parentId: string; members: Placed[]};
+  const grandGroups: GrandGroup[] = [];
+  for (const placedParent of parentPlacements) {
+    const grandparents = sortByBirth(parentsOf(graph, placedParent.person.id)).slice(0, 2);
+    if (grandparents.length === 0) continue;
+    const members: Placed[] =
+      grandparents.length === 1
+        ? [{person: grandparents[0]!, col: placedParent.col, row: 0}]
+        : [
+            {person: grandparents[0]!, col: placedParent.col - 0.5, row: 0},
+            {person: grandparents[1]!, col: placedParent.col + 0.5, row: 0}
+          ];
+    grandGroups.push({parentId: placedParent.person.id, members});
+  }
+  for (let i = 1; i < grandGroups.length; i++) {
+    const prev = grandGroups[i - 1]!;
+    const current = grandGroups[i]!;
+    const prevMax = Math.max(...prev.members.map((m) => m.col));
+    const currentMin = Math.min(...current.members.map((m) => m.col));
+    if (currentMin <= prevMax) {
+      const shift = prevMax + 1 - currentMin;
+      for (const member of current.members) member.col += shift;
+    }
+  }
+
+  // Row 3: children centered under the focus/partner couple.
+  const coupleMid =
+    currentPartners.length > 0 ? focusCol + 0.5 : focusCol;
+  const childPlacements: Placed[] = children.map((person, index) => ({
+    person,
+    col: coupleMid - (children.length - 1) / 2 + index,
+    row: 3
+  }));
+
+  const all: Placed[] = [
+    ...grandGroups.flatMap((group) => group.members),
+    ...parentPlacements,
+    ...focusRow,
+    ...childPlacements
+  ];
+
+  // Normalize columns to start at 0 and drop empty rows.
+  const minCol = Math.min(...all.map((p) => p.col));
+  const usedRows = [...new Set(all.map((p) => p.row))].sort((a, b) => a - b);
+  const rowIndex = new Map(usedRows.map((row, index) => [row, index]));
+  for (const placed of all) placed.col -= minCol;
+
+  const nodes: TreeNode[] = all.map((placed) => ({
+    person: placed.person,
+    x: placed.col * COL,
+    y: (rowIndex.get(placed.row) ?? 0) * ROW,
+    isFocus: Boolean(placed.isFocus)
+  }));
+  const nodeById = new Map(nodes.map((node) => [node.person.id, node]));
+  const centerOf = (node: TreeNode) => ({x: node.x + CARD_W / 2, y: node.y + CARD_H / 2});
+
+  const edges: TreeEdge[] = [];
+
+  // Partner edges: focus <-> each partner. Solid = current, dashed = ended.
+  const focusNode = nodeById.get(focusId)!;
+  orderedPartners.forEach((link, index) => {
+    const partnerNode = nodeById.get(link.person.id);
+    if (!partnerNode) return;
+    const y = focusNode.y + CARD_H / 2 + index * 8;
+    const from = focusNode.x < partnerNode.x ? focusNode : partnerNode;
+    const to = focusNode.x < partnerNode.x ? partnerNode : focusNode;
+    edges.push({
+      dashed: !currentPartners.includes(link),
+      points: [
+        {x: from.x + CARD_W, y},
+        {x: to.x, y}
+      ]
+    });
+  });
+
+  // Parent edges within displayed rows.
+  const drawParentDrop = (
+    parentNodes: TreeNode[],
+    childNode: TreeNode
+  ): void => {
+    if (parentNodes.length === 0) return;
+    const midX =
+      parentNodes.reduce((sum, node) => sum + centerOf(node).x, 0) / parentNodes.length;
+    const bottomY = parentNodes[0]!.y + CARD_H;
+    const busY = bottomY + GAP_Y / 2;
+    const childCenter = centerOf(childNode);
+    edges.push({
+      dashed: false,
+      points: [
+        {x: midX, y: bottomY},
+        {x: midX, y: busY},
+        {x: childCenter.x, y: busY},
+        {x: childCenter.x, y: childNode.y}
+      ]
+    });
+  };
+
+  // Grandparents -> parents.
+  for (const group of grandGroups) {
+    const parentNode = nodeById.get(group.parentId);
+    if (!parentNode) continue;
+    drawParentDrop(
+      group.members
+        .map((member) => nodeById.get(member.person.id))
+        .filter((node): node is TreeNode => Boolean(node)),
+      parentNode
+    );
+  }
+
+  // Parents -> focus and each displayed sibling that shares a parent.
+  const parentNodes = parentPlacements
+    .map((placed) => nodeById.get(placed.person.id))
+    .filter((node): node is TreeNode => Boolean(node));
+  if (parentNodes.length > 0) {
+    const parentIds = new Set(parentPlacements.map((placed) => placed.person.id));
+    drawParentDrop(parentNodes, focusNode);
+    for (const sibling of siblings) {
+      const siblingParents = parentsOf(graph, sibling.id);
+      if (!siblingParents.some((parent) => parentIds.has(parent.id))) continue;
+      const siblingNode = nodeById.get(sibling.id);
+      if (siblingNode) drawParentDrop(parentNodes, siblingNode);
+    }
+  }
+
+  // Focus (+ partner) -> children. Children connect to both displayed parents.
+  for (const child of children) {
+    const childNode = nodeById.get(child.id);
+    if (!childNode) continue;
+    const childParentNodes = parentsOf(graph, child.id)
+      .map((parent) => nodeById.get(parent.id))
+      .filter((node): node is TreeNode => Boolean(node))
+      // Only parents sitting in the focus row form the drop anchor.
+      .filter((node) => node.y === focusNode.y);
+    drawParentDrop(childParentNodes.length > 0 ? childParentNodes : [focusNode], childNode);
+  }
+
+  const width = Math.max(...nodes.map((node) => node.x)) + CARD_W;
+  const height = Math.max(...nodes.map((node) => node.y)) + CARD_H;
+  return {nodes, edges, width, height};
+}
