@@ -9,6 +9,7 @@ import {personName, sortByBirth} from '@/lib/persons/relations';
 import {deletePhotoAction} from '@/lib/photos/actions';
 import {Alert, Button, Card, PersonAvatar} from '@/components/ui';
 import {EditPhotoForm} from '@/components/photos/EditPhotoForm';
+import {CommentsSection} from '@/components/comments/CommentsSection';
 
 export default async function PhotoDetailPage({
   params,
@@ -194,6 +195,16 @@ export default async function PhotoDetailPage({
             </form>
           </div>
         ) : null}
+      </Card>
+      <Card>
+        <h2 className="font-heading mb-3 text-lg">{t('comments.title')}</h2>
+        <CommentsSection
+          targetType="photo"
+          targetId={photo.id}
+          familyId={ctx.family.id}
+          viewerUserId={ctx.user.id}
+          viewerIsAdmin={ctx.role === 'admin'}
+        />
       </Card>
       {originalUrl && photo.kind === 'photo' ? (
         <p className="text-center">

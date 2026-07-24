@@ -400,7 +400,10 @@
     "video_duration_exceeded": "To wideo jest za długie.",
     "relationship_escalation_blocked": "Przywrócenie związku między dwoma przypisanymi profilami wymaga administratora rodziny.",
     "last_guardian": "Nie można usunąć ostatniego opiekuna profilu.",
-    "person_is_minor": "Ten profil należy do osoby niepełnoletniej — zaproszenie będzie możliwe po osiągnięciu pełnoletności."
+    "person_is_minor": "Ten profil należy do osoby niepełnoletniej — zaproszenie będzie możliwe po osiągnięciu pełnoletności.",
+    "comment_too_long": "Komentarz jest za długi.",
+    "comment_not_found": "Ten komentarz już nie istnieje.",
+    "not_allowed_to_delete_comment": "Tylko autor lub administrator rodziny może usunąć ten komentarz."
   },
   "settings": {
     "title": "Ustawienia",
@@ -531,6 +534,19 @@
       "comment_added": "{actor} skomentował(a) „{target}”",
       "birthday_today": "{hasAge, select, yes {{name} kończy dziś {age} lat!} other {{name} ma dziś urodziny!}}",
       "anniversary_today": "{names} świętują dziś rocznicę ślubu"
+    }
+  },
+  "comments": {
+    "title": "Komentarze",
+    "empty": "Nie ma jeszcze komentarzy — napisz coś jako pierwszy(-a).",
+    "placeholder": "Napisz komentarz…",
+    "send": "Dodaj komentarz",
+    "edited": "edytowano",
+    "errors": {
+      "empty": "Komentarz nie może być pusty.",
+      "tooLong": "Komentarz jest za długi.",
+      "notAllowed": "Nie możesz tutaj komentować.",
+      "editWindowOver": "Czas na edycję tego komentarza minął."
     }
   }
 }

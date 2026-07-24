@@ -506,6 +506,10 @@ export type Database = {
         Args: {p_person: string};
         Returns: boolean;
       };
+      delete_comment: {
+        Args: {p_comment: string};
+        Returns: undefined;
+      };
     };
     Enums: {
       gender: Gender;

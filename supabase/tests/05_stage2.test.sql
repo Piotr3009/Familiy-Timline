@@ -896,5 +896,158 @@ begin
   if n <> 0 then raise exception 'TEST: anon feed items = %, want 0', n; end if;
 end $$;
 
+-- ============================================================
+-- comments (migration 19)
+-- ============================================================
+
+-- Anna comments on the family event from the takeover section.
 reset role;
-select 'stage 2 guardianship + audit + relationship + minor + takeover + feed tests passed' as ok;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000001', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000020',
+        'd0000000-0000-4000-8000-000000000002', 'What a lovely day that was!');
+
+-- The comment and its feed item are visible to another member.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 1 then raise exception 'TEST: comment on family event should be visible'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'comment_added'
+    and target_id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 1 then raise exception 'TEST: comment should produce a visible feed item'; end if;
+end $$;
+
+-- A comment on a PRIVATE event is invisible to others (and so is its
+-- feed item) — commenting there is not even possible for non-viewers.
+do $$
+begin
+  begin
+    insert into public.comments (family_id, target_type, target_id, author_user_id, body)
+    values ('f0000000-0000-4000-8000-000000000001',
+            'event', 'e0000000-0000-4000-8000-000000000010',
+            'd0000000-0000-4000-8000-000000000003', 'sneaky');
+    raise exception 'TEST: commenting on an invisible event must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+insert into public.comments (id, family_id, target_type, target_id, author_user_id, body)
+values ('cc000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000001',
+        'event', 'e0000000-0000-4000-8000-000000000010',
+        'd0000000-0000-4000-8000-000000000001', 'my private note comment');
+
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
+set role authenticated;
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000002';
+  if n <> 0 then raise exception 'TEST: comment on private event leaked'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'comment_added'
+    and target_id = 'cc000000-0000-4000-8000-000000000002';
+  if n <> 0 then raise exception 'TEST: private comment feed item leaked'; end if;
+end $$;
+
+-- Author can edit within the window…
+update public.comments
+set body = 'What a lovely day that was! (edited)'
+where id = 'cc000000-0000-4000-8000-000000000001';
+
+do $$
+declare v text;
+begin
+  select body into v from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  if v not like '%(edited)' then
+    raise exception 'TEST: author should be able to edit within the window';
+  end if;
+end $$;
+
+-- …but another member cannot edit it.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', false);
+set role authenticated;
+
+do $$
+declare n int;
+begin
+  update public.comments set body = 'hijacked'
+  where id = 'cc000000-0000-4000-8000-000000000001';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'TEST: only the author may edit a comment'; end if;
+end $$;
+
+-- Nor can anyone hard-delete it.
+do $$
+begin
+  begin
+    delete from public.comments where id = 'cc000000-0000-4000-8000-000000000001';
+    raise exception 'TEST: hard delete must be denied';
+  exception when sqlstate '42501' then null;
+  end;
+end $$;
+
+-- Marek (not author, not admin) cannot soft delete Anna's comment…
+do $$
+begin
+  begin
+    perform public.delete_comment('cc000000-0000-4000-8000-000000000001');
+    raise exception 'TEST: non-author non-admin must not delete comments';
+  exception when others then
+    if sqlerrm <> 'not_allowed_to_delete_comment' then raise; end if;
+  end;
+end $$;
+
+-- …but the family admin (Piotr) can; the feed item disappears.
+reset role;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+select public.delete_comment('cc000000-0000-4000-8000-000000000001');
+
+do $$
+declare n bigint;
+begin
+  select count(*) into n from public.comments
+  where id = 'cc000000-0000-4000-8000-000000000001' and deleted_at is not null;
+  if n <> 1 then raise exception 'TEST: admin soft delete should set deleted_at'; end if;
+  select count(*) into n from public.feed_items
+  where type = 'comment_added'
+    and target_id = 'cc000000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'TEST: deleted comment must leave the feed'; end if;
+end $$;
+
+-- Over-long comments are rejected (config max_comment_length).
+do $$
+begin
+  begin
+    insert into public.comments (family_id, target_type, target_id, author_user_id, body)
+    values ('f0000000-0000-4000-8000-000000000001',
+            'event', 'e0000000-0000-4000-8000-000000000020',
+            'd0000000-0000-4000-8000-000000000001', repeat('x', 2001));
+    raise exception 'TEST: over-long comment must be rejected';
+  exception when others then
+    if sqlerrm <> 'comment_too_long' then raise; end if;
+  end;
+end $$;
+
+reset role;
+select 'stage 2 tests passed (guardianships, audit, relationships, minors, takeover, feed, comments)' as ok;

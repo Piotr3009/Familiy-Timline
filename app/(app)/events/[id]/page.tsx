@@ -12,6 +12,7 @@ import {loadActorNames, loadHistory} from '@/lib/audit/load';
 import {Button, Card, PersonAvatar} from '@/components/ui';
 import {EventForm} from '@/components/events/EventForm';
 import {HistoryPanel} from '@/components/history/HistoryPanel';
+import {CommentsSection} from '@/components/comments/CommentsSection';
 
 async function EventHistory({
   familyId,
@@ -161,6 +162,17 @@ export default async function EventDetailPage({
           </div>
         ) : null}
       </Card>
+      <Card>
+        <h2 className="font-heading mb-3 text-lg">{t('comments.title')}</h2>
+        <CommentsSection
+          targetType="event"
+          targetId={event.id}
+          familyId={ctx.family.id}
+          viewerUserId={ctx.user.id}
+          viewerIsAdmin={ctx.role === 'admin'}
+        />
+      </Card>
+
       <Card>
         <details>
           <summary className="font-heading cursor-pointer text-lg">
