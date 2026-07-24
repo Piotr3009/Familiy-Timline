@@ -10,6 +10,15 @@ with two-sided claim approval, a 2–3 generation tree view, photo/video
 upload with quotas and tagging, events, the family timeline, a dashboard
 and basic privacy — all enforced with Postgres Row Level Security.
 
+**Stage 2** adds: divorces & multiple relationships (full UI: statuses,
+dates, remarriage, tree rendering with an all/current filter), children
+& legal guardians (guardian-managed profiles, minor rules), profile
+ownership transfer at adulthood (guardian banner → standard invitation →
+post-takeover review screen), the family activity feed, comments on
+events and photos, in-app notifications with a bell (immediate email for
+claim/approval/removal events via Resend), and append-only edit history
+with per-field undo on person and event pages.
+
 ## Tech stack
 
 Next.js (App Router) · TypeScript strict · Supabase (Postgres, Auth,
@@ -80,12 +89,20 @@ The local seed creates a demo login: `demo@familytimeline.app` /
    (`NEXT_PUBLIC_APP_URL` = your production URL).
 3. Deploy — no extra build configuration is required.
 
+> **After pulling Stage 2:** the new migrations
+> (`20260724000014` … `20260724000020`) must be applied with
+> `npx supabase db push` before the deployed app works — guardianships,
+> audit log, feed, comments and notifications all live in the database.
+
 ## Tests
 
 ```bash
-npm test                     # unit tests: dates, tokens, tree layout, celebrations
+npm test                     # unit tests: dates, tokens, tree layout, celebrations,
+                             # history diffs, relationship dates, minor status
+npm run lint                 # eslint (next/core-web-vitals + next/typescript)
 ./supabase/tests/run.sh      # DB tests: migrations + RLS proofs + invitation
-                             # flow + quotas, on any local PostgreSQL
+                             # flow + quotas + the Stage 2 suite
+                             # (05_stage2.test.sql), on any local PostgreSQL
 ```
 
 The SQL suite runs against plain PostgreSQL using a small Supabase shim
@@ -112,7 +129,34 @@ storage objects follow photo privacy.
   photo row's privacy via storage policies. Versions
   (original/preview/thumb) are generated client-side before upload.
 - **Product limits** (file sizes, quotas, invite validity, rate limits)
-  live in the `config` table — never hardcoded.
+  live in the `config` table — never hardcoded. Stage 2 adds
+  `adulthood_age` (18), `max_comment_length` (2000),
+  `comment_edit_window_min` (15) and `feed_photo_batch_window_min` (15).
+- **Guardianships** control who MANAGES an unclaimed profile (ancestry
+  stays in `relationships`). Rows are never deleted — ending sets
+  `ended_at`; the last active guardian of an unclaimed profile cannot be
+  removed. Minor rules are hard: a minor's profile cannot be more
+  visible than `family`, and invitations for minors are refused by the
+  database. Minor status is computed conservatively from the partial
+  birth date (`public.is_minor` / `lib/persons/minors.ts` — keep in sync).
+- **No cron jobs.** Adulthood detection and the derived notifications
+  (today's birthdays, adult-takeover nudges) are computed at read time
+  on the relevant pages — nothing to schedule or break silently, at the
+  cost of nudges appearing only when pages are viewed. `pg_cron` can be
+  added later without schema changes.
+- **Feed & comments** are written by database triggers only, and their
+  RLS re-checks the target object's visibility on every read — a
+  private photo never produces a visible feed item, comment or
+  notification for anyone but its owner.
+- **Edit history** (`audit_log`) is append-only and populated by a
+  generic trigger on persons/relationships/events/photos/guardianships.
+  Reverting a field writes the old value back through a normal update —
+  history is never rewritten, and reverts appear in history themselves.
+- **Notification emails** (immediate only for `invitation_claimed`,
+  `claim_approved`, `removal_requested`) are sent inline from the server
+  action that caused the event, with failure logging; everything else is
+  in-app only. A per-user toggle on the settings page (default on) is
+  respected by every email.
 - **i18n**: `messages/en.json` is the source of truth; add a language by
   adding one JSON file and its code to `i18n/config.ts`. User-generated
   content is never translated. Event/relationship/privacy keys are
@@ -137,6 +181,20 @@ Non-blocking items surfaced by the Stage 1 review that are safe to defer:
   and the file upload leaves a quota-consuming row with no file. A
   periodic sweep of rows whose storage objects are missing would reclaim
   them.
-- **Upcoming celebrations** are computed from `persons.birth_date` and
-  `wedding` events; `birth`-type events are intentionally not a second
-  birthday source to avoid duplicate reminders.
+- **Upcoming celebrations** are computed from the persons' partial birth
+  dates (`birth_month`/`birth_day`) and `wedding` events; `birth`-type
+  events are intentionally not a second birthday source to avoid
+  duplicate reminders.
+- **pgcrypto portability**: migration 1 installs pgcrypto without a
+  schema, so on a fresh database its functions land in `public`. On a
+  project where pgcrypto was pre-enabled in the `extensions` schema the
+  invitation functions would not resolve `digest()`; migration 15 pins
+  their `search_path` to `public, extensions`, which is correct in both
+  layouts. New crypto-using functions should do the same.
+- **Reconciliation of an ended relationship between two claimed
+  accounts** (e.g. divorced → married again) requires a family admin —
+  a deliberate guard against one side unilaterally granting themselves
+  immediate-family visibility. Consent-based linking arrives in Stage 3.
+- **Tags on `private` items are invisible to the tagged person** (Stage
+  1 semantics): the takeover review can only list content its owner has
+  made at least family-visible.
