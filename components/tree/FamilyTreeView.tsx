@@ -11,10 +11,13 @@ import {CARD_H, CARD_W, type TreeLayout} from '@/lib/tree';
  */
 export function FamilyTreeView({
   layout,
-  avatarUrls
+  avatarUrls,
+  endedYearLabel
 }: {
   layout: TreeLayout;
   avatarUrls: Map<string, string>;
+  /** Formats the end-year annotation on dashed partner lines. */
+  endedYearLabel?: (year: number) => string;
 }) {
   return (
     <div className="overflow-auto rounded-card border border-border bg-surface-raised p-6">
@@ -39,6 +42,20 @@ export function FamilyTreeView({
               strokeLinejoin="round"
             />
           ))}
+          {layout.edges.map((edge, index) =>
+            edge.endYear && edge.labelAt ? (
+              <text
+                key={`label-${index}`}
+                x={edge.labelAt.x}
+                y={edge.labelAt.y}
+                textAnchor="middle"
+                fontSize={10}
+                fill="var(--color-ink-faint)"
+              >
+                {endedYearLabel ? endedYearLabel(edge.endYear) : String(edge.endYear)}
+              </text>
+            ) : null
+          )}
         </svg>
         {layout.nodes.map((node) => (
           <Link

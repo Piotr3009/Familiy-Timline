@@ -168,6 +168,32 @@
       "divorced": "Po rozwodzie",
       "former_partner": "Byli partnerzy",
       "widowed": "Wdowieństwo"
+    },
+    "title": "Związki",
+    "empty": "Nie zapisano jeszcze żadnych związków.",
+    "addButton": "Dodaj związek",
+    "selectPerson": "Kto jest partnerem?",
+    "addNewHint": "Osobę spoza drzewa dodasz przez „Dodaj krewnego” w sekcji rodziny.",
+    "statusLabel": "Status",
+    "startDate": "Razem od",
+    "weddingDate": "Ślub",
+    "separationDate": "Separacja",
+    "divorceDate": "Rozwód",
+    "sharedChildren": "Wspólne dzieci",
+    "markWidowed": "Oznacz wdowieństwo",
+    "markWidowedHint": "{name} ma odnotowaną śmierć — możesz zmienić status tego związku na „Wdowiec / wdowa”.",
+    "errors": {
+      "duplicateActive": "Te osoby mają już trwający zapis związku.",
+      "needsUnclaimed": "Dwóch przypisanych profili nie da się połączyć bezpośrednio — łączenie za zgodą obu stron pojawi się w kolejnym etapie.",
+      "datesRejected": "Daty są w złej kolejności.",
+      "notAllowed": "Nie możesz edytować tego związku.",
+      "wedding_before_start": "Data ślubu nie może być wcześniejsza niż początek związku.",
+      "separation_before_wedding": "Data separacji nie może być wcześniejsza niż ślub.",
+      "separation_before_start": "Data separacji nie może być wcześniejsza niż początek związku.",
+      "divorce_before_separation": "Data rozwodu nie może być wcześniejsza niż separacja.",
+      "divorce_before_wedding": "Data rozwodu nie może być wcześniejsza niż ślub.",
+      "divorce_before_start": "Data rozwodu nie może być wcześniejsza niż początek związku.",
+      "invalid_date": "Jedna z dat jest nieprawidłowa."
     }
   },
   "tree": {
@@ -176,7 +202,11 @@
     "hint": "Widok do trzech pokoleń wokół osoby: {name}. Dotknij karty, aby otworzyć profil; przeciągaj lub przewijaj, aby się poruszać.",
     "emptyTitle": "Twoje drzewo czeka, aby urosnąć",
     "emptyHint": "Dodaj siebie i najbliższą rodzinę, aby zobaczyć pierwsze gałęzie.",
-    "emptyAction": "Dodaj członków rodziny"
+    "emptyAction": "Dodaj członków rodziny",
+    "filterLabel": "Widoczne związki",
+    "filterCurrent": "Tylko obecne",
+    "filterAll": "Wszystkie (także dawne)",
+    "endedYear": "do {year}"
   },
   "invite": {
     "invalid": "Ten link z zaproszeniem jest nieprawidłowy. Poproś kogoś z rodziny o sprawdzenie lub wysłanie nowego.",
@@ -366,7 +396,10 @@
     "not_authenticated": "Najpierw się zaloguj.",
     "media_quota_exceeded": "Osiągnięto limit przesyłanych plików.",
     "file_size_exceeded": "Ten plik jest za duży.",
-    "video_duration_exceeded": "To wideo jest za długie."
+    "video_duration_exceeded": "To wideo jest za długie.",
+    "relationship_escalation_blocked": "Przywrócenie związku między dwoma przypisanymi profilami wymaga administratora rodziny.",
+    "last_guardian": "Nie można usunąć ostatniego opiekuna profilu.",
+    "person_is_minor": "Ten profil należy do osoby niepełnoletniej — zaproszenie będzie możliwe po osiągnięciu pełnoletności."
   },
   "settings": {
     "title": "Ustawienia",
@@ -390,5 +423,61 @@
     "reportHandled": "Zgłoszenie obsłużone.",
     "markResolved": "Oznacz jako rozwiązane",
     "dismiss": "Odrzuć"
+  },
+  "history": {
+    "title": "Historia zmian",
+    "empty": "Brak zapisanych zmian.",
+    "created": "Utworzono",
+    "deleted": "Usunięto",
+    "fieldChange": "{field}: {from} → {to}",
+    "noValue": "—",
+    "yes": "tak",
+    "no": "nie",
+    "valueUpdated": "zaktualizowano",
+    "revert": "Cofnij",
+    "unknownActor": "Ktoś z rodziny",
+    "relationshipWith": "Związek z {name}",
+    "errors": {
+      "revertFailed": "Nie udało się cofnąć tej zmiany — może kolidować z nowszymi danymi.",
+      "notAllowed": "Nie możesz cofać zmian w tym elemencie."
+    },
+    "fields": {
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "maidenName": "Nazwisko panieńskie",
+      "gender": "Płeć",
+      "birthYear": "Rok urodzenia",
+      "birthMonth": "Miesiąc urodzenia",
+      "birthDay": "Dzień urodzenia",
+      "birthPlace": "Miejsce urodzenia",
+      "deathYear": "Rok śmierci",
+      "deathMonth": "Miesiąc śmierci",
+      "deathDay": "Dzień śmierci",
+      "deathPlace": "Miejsce śmierci",
+      "isDeceased": "Osoba zmarła",
+      "bio": "Biografia",
+      "avatar": "Zdjęcie profilowe",
+      "lifeDetailsPrivacy": "Prywatność szczegółów życia",
+      "title": "Tytuł",
+      "description": "Opis",
+      "location": "Miejsce",
+      "eventYear": "Rok wydarzenia",
+      "eventMonth": "Miesiąc wydarzenia",
+      "eventDay": "Dzień wydarzenia",
+      "privacy": "Prywatność",
+      "type": "Rodzaj",
+      "status": "Status",
+      "startDate": "Razem od",
+      "weddingDate": "Data ślubu",
+      "separationDate": "Data separacji",
+      "divorceDate": "Data rozwodu",
+      "parentRole": "Rola rodzica",
+      "endedAt": "Zakończono",
+      "takenYear": "Rok wykonania",
+      "takenMonth": "Miesiąc wykonania",
+      "takenDay": "Dzień wykonania",
+      "linkedEvent": "Powiązane wydarzenie",
+      "takeoverReviewed": "Przegląd profilu"
+    }
   }
 }

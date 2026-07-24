@@ -168,6 +168,32 @@
       "divorced": "Divorced",
       "former_partner": "Former partners",
       "widowed": "Widowed"
+    },
+    "title": "Relationships",
+    "empty": "No relationships recorded yet.",
+    "addButton": "Add relationship",
+    "selectPerson": "Who is the partner?",
+    "addNewHint": "Someone not in the tree yet? Use “Add relative” in the family section instead.",
+    "statusLabel": "Status",
+    "startDate": "Together since",
+    "weddingDate": "Wedding",
+    "separationDate": "Separation",
+    "divorceDate": "Divorce",
+    "sharedChildren": "Children together",
+    "markWidowed": "Mark as widowed",
+    "markWidowedHint": "{name} is recorded as deceased — you can set this relationship to “Widowed”.",
+    "errors": {
+      "duplicateActive": "These two already have an ongoing relationship record.",
+      "needsUnclaimed": "Two claimed profiles cannot be linked directly — consent-based linking arrives in a later stage.",
+      "datesRejected": "The dates are in the wrong order.",
+      "notAllowed": "You cannot edit this relationship.",
+      "wedding_before_start": "The wedding date cannot be before the start of the relationship.",
+      "separation_before_wedding": "The separation date cannot be before the wedding.",
+      "separation_before_start": "The separation date cannot be before the start of the relationship.",
+      "divorce_before_separation": "The divorce date cannot be before the separation.",
+      "divorce_before_wedding": "The divorce date cannot be before the wedding.",
+      "divorce_before_start": "The divorce date cannot be before the start of the relationship.",
+      "invalid_date": "One of the dates is not a valid date."
     }
   },
   "tree": {
@@ -176,7 +202,11 @@
     "hint": "Showing up to three generations around {name}. Tap a card to open the profile; drag or scroll to pan.",
     "emptyTitle": "Your tree is waiting to grow",
     "emptyHint": "Add yourself and your closest family to see the first branches.",
-    "emptyAction": "Add family members"
+    "emptyAction": "Add family members",
+    "filterLabel": "Relationships shown",
+    "filterCurrent": "Current only",
+    "filterAll": "All (including past)",
+    "endedYear": "ended {year}"
   },
   "invite": {
     "invalid": "This invitation link is not valid. Ask your family member to check it or send a new one.",
@@ -366,7 +396,10 @@
     "not_authenticated": "Please sign in first.",
     "media_quota_exceeded": "You have reached your upload limit.",
     "file_size_exceeded": "This file is too large.",
-    "video_duration_exceeded": "This video is too long."
+    "video_duration_exceeded": "This video is too long.",
+    "relationship_escalation_blocked": "Restoring a relationship between two claimed profiles needs a family admin.",
+    "last_guardian": "The last guardian of a profile cannot be removed.",
+    "person_is_minor": "This profile belongs to a minor — an invitation becomes possible once they are an adult."
   },
   "settings": {
     "title": "Settings",
@@ -390,5 +423,61 @@
     "reportHandled": "Report handled.",
     "markResolved": "Mark resolved",
     "dismiss": "Dismiss"
+  },
+  "history": {
+    "title": "History",
+    "empty": "No changes recorded yet.",
+    "created": "Created",
+    "deleted": "Deleted",
+    "fieldChange": "{field}: {from} → {to}",
+    "noValue": "—",
+    "yes": "yes",
+    "no": "no",
+    "valueUpdated": "updated",
+    "revert": "Undo",
+    "unknownActor": "A family member",
+    "relationshipWith": "Relationship with {name}",
+    "errors": {
+      "revertFailed": "This change could not be undone — it may conflict with newer data.",
+      "notAllowed": "You cannot undo changes on this item."
+    },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "maidenName": "Maiden name",
+      "gender": "Gender",
+      "birthYear": "Birth year",
+      "birthMonth": "Birth month",
+      "birthDay": "Birth day",
+      "birthPlace": "Birth place",
+      "deathYear": "Death year",
+      "deathMonth": "Death month",
+      "deathDay": "Death day",
+      "deathPlace": "Death place",
+      "isDeceased": "Deceased",
+      "bio": "Biography",
+      "avatar": "Profile photo",
+      "lifeDetailsPrivacy": "Life details privacy",
+      "title": "Title",
+      "description": "Description",
+      "location": "Place",
+      "eventYear": "Event year",
+      "eventMonth": "Event month",
+      "eventDay": "Event day",
+      "privacy": "Privacy",
+      "type": "Type",
+      "status": "Status",
+      "startDate": "Together since",
+      "weddingDate": "Wedding date",
+      "separationDate": "Separation date",
+      "divorceDate": "Divorce date",
+      "parentRole": "Parent role",
+      "endedAt": "Ended",
+      "takenYear": "Year taken",
+      "takenMonth": "Month taken",
+      "takenDay": "Day taken",
+      "linkedEvent": "Linked event",
+      "takeoverReviewed": "Profile review"
+    }
   }
 }

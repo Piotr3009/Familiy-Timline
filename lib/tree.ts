@@ -35,7 +35,13 @@ export type TreeEdge = {
   /** Poly-line points in px. */
   points: Array<{x: number; y: number}>;
   dashed: boolean;
+  /** Ending year of an ended partner relationship (shown on the line). */
+  endYear?: number | null;
+  /** Anchor for the endYear label, px. */
+  labelAt?: {x: number; y: number};
 };
+
+export type TreePartnerFilter = 'all' | 'current';
 
 export type TreeLayout = {
   nodes: TreeNode[];
@@ -46,9 +52,14 @@ export type TreeLayout = {
 
 type Placed = {person: VisiblePerson; col: number; row: number; isFocus?: boolean};
 
-export function computeTreeLayout(graph: FamilyGraph, focusId: string): TreeLayout | null {
+export function computeTreeLayout(
+  graph: FamilyGraph,
+  focusId: string,
+  options: {partnerFilter?: TreePartnerFilter} = {}
+): TreeLayout | null {
   const focus = graph.persons.get(focusId);
   if (!focus) return null;
+  const partnerFilter = options.partnerFilter ?? 'all';
 
   const parents = sortByBirth(parentsOf(graph, focusId)).slice(0, 2);
   const siblings = sortByBirth(siblingsOf(graph, focusId));
@@ -59,7 +70,10 @@ export function computeTreeLayout(graph: FamilyGraph, focusId: string): TreeLayo
     )
   );
   const endedPartners = partnerLinks.filter((link) => !currentPartners.includes(link));
-  const orderedPartners = [...currentPartners, ...endedPartners];
+  // 'current' hides ended relationships — the PEOPLE never disappear:
+  // children of a hidden ex still render, connected to the focus.
+  const orderedPartners =
+    partnerFilter === 'current' ? currentPartners : [...currentPartners, ...endedPartners];
   const children = sortByBirth(childrenOf(graph, focusId));
 
   // Row 2 (focus row): siblings left, focus, partners right.
@@ -107,14 +121,47 @@ export function computeTreeLayout(graph: FamilyGraph, focusId: string): TreeLayo
     }
   }
 
-  // Row 3: children centered under the focus/partner couple.
-  const coupleMid =
-    currentPartners.length > 0 ? focusCol + 0.5 : focusCol;
-  const childPlacements: Placed[] = children.map((person, index) => ({
-    person,
-    col: coupleMid - (children.length - 1) / 2 + index,
-    row: 3
-  }));
+  // Row 3: children grouped under the correct couple. Each child whose
+  // OTHER parent is a displayed partner goes under that couple's
+  // midpoint; children of hidden/unknown other parents sit under the
+  // focus. Groups are swept left-to-right to remove overlaps.
+  const partnerColByPersonId = new Map(
+    orderedPartners.map((link, index) => [link.person.id, focusCol + 1 + index])
+  );
+  const soloChildren: VisiblePerson[] = [];
+  const childrenByPartner = new Map<string, VisiblePerson[]>();
+  for (const child of children) {
+    const otherParent = parentsOf(graph, child.id).find(
+      (parent) => parent.id !== focusId && partnerColByPersonId.has(parent.id)
+    );
+    if (otherParent) {
+      const list = childrenByPartner.get(otherParent.id) ?? [];
+      list.push(child);
+      childrenByPartner.set(otherParent.id, list);
+    } else {
+      soloChildren.push(child);
+    }
+  }
+  const childGroups: {centerCol: number; members: VisiblePerson[]}[] = [];
+  if (soloChildren.length > 0) {
+    childGroups.push({centerCol: focusCol, members: soloChildren});
+  }
+  for (const link of orderedPartners) {
+    const members = childrenByPartner.get(link.person.id);
+    if (!members || members.length === 0) continue;
+    const partnerCol = partnerColByPersonId.get(link.person.id)!;
+    childGroups.push({centerCol: (focusCol + partnerCol) / 2, members});
+  }
+  const childPlacements: Placed[] = [];
+  let prevGroupMax = Number.NEGATIVE_INFINITY;
+  for (const group of childGroups) {
+    let startCol = group.centerCol - (group.members.length - 1) / 2;
+    if (startCol <= prevGroupMax) startCol = prevGroupMax + 1;
+    group.members.forEach((child, index) =>
+      childPlacements.push({person: child, col: startCol + index, row: 3})
+    );
+    prevGroupMax = startCol + group.members.length - 1;
+  }
 
   const all: Placed[] = [
     ...grandGroups.flatMap((group) => group.members),
@@ -140,7 +187,8 @@ export function computeTreeLayout(graph: FamilyGraph, focusId: string): TreeLayo
 
   const edges: TreeEdge[] = [];
 
-  // Partner edges: focus <-> each partner. Solid = current, dashed = ended.
+  // Partner edges: focus <-> each partner. Solid = current, dashed =
+  // ended (with the end year, when known, shown at the line's middle).
   const focusNode = nodeById.get(focusId)!;
   orderedPartners.forEach((link, index) => {
     const partnerNode = nodeById.get(link.person.id);
@@ -148,8 +196,15 @@ export function computeTreeLayout(graph: FamilyGraph, focusId: string): TreeLayo
     const y = focusNode.y + CARD_H / 2 + index * 8;
     const from = focusNode.x < partnerNode.x ? focusNode : partnerNode;
     const to = focusNode.x < partnerNode.x ? partnerNode : focusNode;
+    const dashed = !currentPartners.includes(link);
+    const endDate = link.relationship.divorce_date ?? link.relationship.separation_date;
+    const endYear = dashed && endDate ? Number(endDate.slice(0, 4)) : null;
     edges.push({
-      dashed: !currentPartners.includes(link),
+      dashed,
+      endYear,
+      labelAt: endYear
+        ? {x: (from.x + CARD_W + to.x) / 2, y: y - 4}
+        : undefined,
       points: [
         {x: from.x + CARD_W, y},
         {x: to.x, y}

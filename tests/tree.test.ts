@@ -128,6 +128,51 @@ describe('computeTreeLayout', () => {
     }
   });
 
+  it('groups children under the correct couple with multiple partners', () => {
+    const graph = buildGraph();
+    // Dad also has an ex-wife with one child from that marriage.
+    graph.persons.set('ex', person('ex', 'Ex', 1976));
+    graph.persons.set('exkid', person('exkid', 'ExKid', 2000));
+    const exRel = rel('r9', 'dad', 'ex', 'partner', 'divorced');
+    exRel.divorce_date = '2003-06-30';
+    graph.relationships.push(
+      exRel,
+      rel('r10', 'dad', 'exkid', 'parent_child'),
+      rel('r11', 'ex', 'exkid', 'parent_child')
+    );
+    const layout = computeTreeLayout(graph, 'dad')!;
+    const nodeOf = (id: string) => layout.nodes.find((node) => node.person.id === id)!;
+    // Both children render on the children row, no overlap.
+    expect(nodeOf('kid').y).toBe(nodeOf('exkid').y);
+    expect(nodeOf('kid').x).not.toBe(nodeOf('exkid').x);
+    // Current partner sits closer to the focus than the ex.
+    expect(Math.abs(nodeOf('mom').x - nodeOf('dad').x)).toBeLessThan(
+      Math.abs(nodeOf('ex').x - nodeOf('dad').x)
+    );
+    // ExKid (couple dad+ex) sits right of Kid (couple dad+mom).
+    expect(nodeOf('exkid').x).toBeGreaterThan(nodeOf('kid').x);
+    // The dashed edge carries the divorce year.
+    const dashed = layout.edges.find((edge) => edge.dashed && edge.endYear === 2003);
+    expect(dashed).toBeDefined();
+    expect(dashed!.labelAt).toBeDefined();
+  });
+
+  it("hides ended partners with the 'current' filter but keeps their children", () => {
+    const graph = buildGraph();
+    graph.persons.set('ex', person('ex', 'Ex', 1976));
+    graph.persons.set('exkid', person('exkid', 'ExKid', 2000));
+    graph.relationships.push(
+      rel('r9', 'dad', 'ex', 'partner', 'divorced'),
+      rel('r10', 'dad', 'exkid', 'parent_child'),
+      rel('r11', 'ex', 'exkid', 'parent_child')
+    );
+    const layout = computeTreeLayout(graph, 'dad', {partnerFilter: 'current'})!;
+    const ids = layout.nodes.map((node) => node.person.id);
+    expect(ids).not.toContain('ex');
+    expect(ids).toContain('exkid'); // the child never disappears
+    expect(ids).toContain('mom'); // current partner stays
+  });
+
   it('does not overlap grandparent groups when both sides have parents', () => {
     const graph = buildGraph();
     graph.persons.set('gp3', person('gp3', 'Opa', 1945));

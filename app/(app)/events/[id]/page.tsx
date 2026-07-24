@@ -8,8 +8,32 @@ import {formatPartialDate} from '@/lib/dates';
 import {createSignedUrls} from '@/lib/media';
 import {personName, sortByBirth} from '@/lib/persons/relations';
 import {deleteEventAction} from '@/lib/events/actions';
+import {loadActorNames, loadHistory} from '@/lib/audit/load';
 import {Button, Card, PersonAvatar} from '@/components/ui';
 import {EventForm} from '@/components/events/EventForm';
+import {HistoryPanel} from '@/components/history/HistoryPanel';
+
+async function EventHistory({
+  familyId,
+  eventId,
+  canEdit
+}: {
+  familyId: string;
+  eventId: string;
+  canEdit: boolean;
+}) {
+  const supabase = await createClient();
+  const entries = await loadHistory(supabase, [{table: 'events', rowIds: [eventId]}]);
+  const actorNames = await loadActorNames(supabase, familyId, entries);
+  return (
+    <HistoryPanel
+      entries={entries}
+      actorNames={actorNames}
+      canEdit={canEdit}
+      revalidate={`/events/${eventId}`}
+    />
+  );
+}
 
 export default async function EventDetailPage({
   params
@@ -23,7 +47,14 @@ export default async function EventDetailPage({
   const t = await getTranslations();
   const supabase = await createClient();
 
-  const {data: event} = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+  // Family-scoped: a member of several families must not see another
+  // family's item under this family's chrome (role/permissions differ).
+  const {data: event} = await supabase
+    .from('events')
+    .select('*')
+    .eq('id', id)
+    .eq('family_id', ctx.family.id)
+    .maybeSingle();
   if (!event) notFound();
 
   const [{data: participantRows}, {data: personsRaw}, {data: photos}] = await Promise.all([
@@ -130,6 +161,17 @@ export default async function EventDetailPage({
           </div>
         ) : null}
       </Card>
+      <Card>
+        <details>
+          <summary className="font-heading cursor-pointer text-lg">
+            {t('history.title')}
+          </summary>
+          <div className="mt-4">
+            <EventHistory familyId={ctx.family.id} eventId={event.id} canEdit={canEdit} />
+          </div>
+        </details>
+      </Card>
+
       {canEdit ? (
         <Card>
           <h2 className="font-heading mb-3 text-lg">{t('events.editTitle')}</h2>

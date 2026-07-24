@@ -2,6 +2,7 @@
 
 import {cookies} from 'next/headers';
 import {revalidatePath} from 'next/cache';
+import {redirect} from 'next/navigation';
 import {createClient} from '@/lib/supabase/server';
 import {
   isLocale,
@@ -49,6 +50,28 @@ export async function setThemeAction(formData: FormData): Promise<void> {
     await supabase.auth.updateUser({data: {theme}});
   }
   revalidatePath('/', 'layout');
+}
+
+/**
+ * Tree "all/current relationships" filter — persisted on the account
+ * (user metadata) like theme/locale, so it follows the user across
+ * devices. Redirects back to the tree with the new filter applied.
+ */
+export async function setTreePartnerFilterAction(formData: FormData): Promise<void> {
+  const filter = String(formData.get('filter') ?? '');
+  if (filter !== 'all' && filter !== 'current') return;
+  const rawFocus = String(formData.get('focus') ?? '');
+  const focus = /^[0-9a-f-]{36}$/i.test(rawFocus) ? rawFocus : null;
+
+  const supabase = await createClient();
+  const {
+    data: {user}
+  } = await supabase.auth.getUser();
+  if (user) {
+    await supabase.auth.updateUser({data: {tree_partner_filter: filter}});
+  }
+  revalidatePath('/tree');
+  redirect(`/tree?partners=${filter}${focus ? `&focus=${focus}` : ''}`);
 }
 
 export type ResolveReportState = {error: string | null; ok?: boolean};
