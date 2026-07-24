@@ -25,7 +25,14 @@ export default async function PhotoDetailPage({
   const t = await getTranslations();
   const supabase = await createClient();
 
-  const {data: photo} = await supabase.from('photos').select('*').eq('id', id).maybeSingle();
+  // Family-scoped: a member of several families must not see another
+  // family's item under this family's chrome (role/permissions differ).
+  const {data: photo} = await supabase
+    .from('photos')
+    .select('*')
+    .eq('id', id)
+    .eq('family_id', ctx.family.id)
+    .maybeSingle();
   if (!photo) notFound();
 
   const displayPath =

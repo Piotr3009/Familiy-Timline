@@ -15,6 +15,7 @@ export function AddRelativeToggle({
   partnerOptions: {id: string; name: string}[];
 }) {
   const t = useTranslations('onboarding');
+  const tCommon = useTranslations('common');
   const [open, setOpen] = useState(false);
 
   if (!open) {
@@ -31,6 +32,14 @@ export function AddRelativeToggle({
         anchorName={anchorName}
         partnerOptions={partnerOptions}
       />
+      <Button
+        type="button"
+        variant="ghost"
+        className="mt-2 w-full"
+        onClick={() => setOpen(false)}
+      >
+        {tCommon('close')}
+      </Button>
     </div>
   );
 }

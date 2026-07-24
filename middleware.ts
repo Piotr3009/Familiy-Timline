@@ -72,7 +72,10 @@ export async function middleware(request: NextRequest) {
   if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('next', pathname);
+    url.search = '';
+    // Keep the query string so deep links survive the login round-trip
+    // (safeNext re-validates the value server-side).
+    url.searchParams.set('next', pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 

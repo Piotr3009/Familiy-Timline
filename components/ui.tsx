@@ -5,7 +5,8 @@ import type {ComponentPropsWithoutRef, ReactNode} from 'react';
  * with the design tokens in globals.css. Intentionally dependency-free.
  */
 
-function cx(...parts: Array<string | false | null | undefined>): string {
+/** Conditional class-name join, shared by all components. */
+export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
 }
 

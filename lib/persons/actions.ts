@@ -294,7 +294,10 @@ export async function deletePersonAction(formData: FormData): Promise<void> {
   const personId = String(formData.get('personId') ?? '');
   if (!personId) return;
   const supabase = await createClient();
-  await supabase.from('persons').delete().eq('id', personId);
+  const {error} = await supabase.from('persons').delete().eq('id', personId);
+  if (error) {
+    redirect(`/people/${personId}?error=delete`);
+  }
   revalidatePath('/tree');
   redirect('/tree');
 }
