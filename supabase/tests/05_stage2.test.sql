@@ -12,8 +12,9 @@ reset role;
 insert into auth.users (id, email) values
   ('d0000000-0000-4000-8000-000000000004', 'guardian2@test.local');
 
--- Piotr (u1) creates a child profile (Julia already exists in seed as
--- a0..07, born 2005 — adult by 2026) and a NEW minor child born 2015.
+-- Piotr (u1) creates a NEW minor child born 2015. (For adult-profile
+-- tests further down, seed's Zofia Wiśniewska = a0..07, born 1952,
+-- unclaimed; seed's Julia = a0..08, born 2005.)
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
 set role authenticated;
 
@@ -170,21 +171,28 @@ begin
   if n <> 0 then raise exception 'TEST: guardianship rows must not be deletable'; end if;
 end $$;
 
--- Guardianship across families is rejected.
+-- Guardianship across families is rejected by the coherence trigger.
+-- (The foreign person id is captured as superuser — under RLS the
+-- member cannot even see it, which would test nothing.)
+reset role;
+select set_config('test.foreign_person',
+  (select id::text from public.persons
+   where family_id <> 'f0000000-0000-4000-8000-000000000001' limit 1), false);
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
 do $$
 begin
   begin
     insert into public.guardianships (family_id, person_id, guardian_person_id, type, created_by)
     values ('f0000000-0000-4000-8000-000000000001',
             'a0000000-0000-4000-8000-000000000020',
-            (select id from public.persons
-             where family_id <> 'f0000000-0000-4000-8000-000000000001' limit 1),
+            current_setting('test.foreign_person')::uuid,
             'parent',
             'd0000000-0000-4000-8000-000000000001');
     raise exception 'TEST: cross-family guardianship must fail';
   exception when others then
-    if sqlerrm not like '%same family%' and sqlerrm not like '%not found%'
-       and sqlstate <> '42501' then raise; end if;
+    if sqlerrm not like '%same family%' then raise; end if;
   end;
 end $$;
 
@@ -536,18 +544,45 @@ reset role;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
 set role authenticated;
 
--- Zosia (born 2015) is a minor; Julia (born 2005) is an adult.
+-- Zosia (born 2015) is a minor; Zofia (b. 1952) and Julia (b. 2005,
+-- past the age-18 boundary in 2026) are adults.
 do $$
 begin
   if not public.is_minor('a0000000-0000-4000-8000-000000000020') then
     raise exception 'TEST: a child born 2015 must be a minor';
   end if;
   if public.is_minor('a0000000-0000-4000-8000-000000000007') then
-    raise exception 'TEST: a person born 2005 must not be a minor';
+    raise exception 'TEST: a person born 1952 must not be a minor';
   end if;
-  -- Deceased and birth-date-less profiles are not minors.
-  if public.is_minor('a0000000-0000-4000-8000-000000000006') then
-    raise exception 'TEST: a deceased person must not be a minor';
+  if public.is_minor('a0000000-0000-4000-8000-000000000008') then
+    raise exception 'TEST: a person born 2005 (past 18) must not be a minor';
+  end if;
+end $$;
+
+-- Deceased and birth-date-less profiles are never minors, even at ages
+-- that would otherwise qualify.
+insert into public.persons (id, family_id, managed_by, created_by,
+                            first_name, last_name, birth_year, is_deceased)
+values ('a0000000-0000-4000-8000-000000000022',
+        'f0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'Angel', 'Testowy', 2016, true);
+insert into public.persons (id, family_id, managed_by, created_by,
+                            first_name, last_name)
+values ('a0000000-0000-4000-8000-000000000023',
+        'f0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'd0000000-0000-4000-8000-000000000001',
+        'Nieznana', 'Testowa');
+
+do $$
+begin
+  if public.is_minor('a0000000-0000-4000-8000-000000000022') then
+    raise exception 'TEST: a deceased child must not count as a minor';
+  end if;
+  if public.is_minor('a0000000-0000-4000-8000-000000000023') then
+    raise exception 'TEST: a birth-date-less profile must not count as a minor';
   end if;
 end $$;
 
@@ -566,7 +601,7 @@ end $$;
 do $$
 declare v jsonb;
 begin
-  v := public.create_invitation('a0000000-0000-4000-8000-000000000007', 'tok_julia');
+  v := public.create_invitation('a0000000-0000-4000-8000-000000000007', 'tok_zofia');
   if v->>'invitation_id' is null then
     raise exception 'TEST: inviting an adult should work';
   end if;
@@ -583,12 +618,12 @@ where id = 'a0000000-0000-4000-8000-000000000020';
 -- adulthood transfer (migration 17)
 -- ============================================================
 
--- u5 will claim Julia (born 2005, adult, unclaimed, guardian-managed).
+-- u5 will claim Zofia W. (a0..07, adult, unclaimed, guardian-managed).
 reset role;
 insert into auth.users (id, email) values
-  ('d0000000-0000-4000-8000-000000000005', 'julia@test.local');
+  ('d0000000-0000-4000-8000-000000000005', 'zofia@test.local');
 
--- Piotr becomes Julia's guardian and tags her in a family-visible photo
+-- Piotr becomes Zofia's guardian and tags her in a family-visible photo
 -- and event, so the review flow has content to hide. (Tags on PRIVATE
 -- items are invisible to the tagged person — nothing to hide there.)
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
@@ -627,7 +662,7 @@ set role authenticated;
 do $$
 declare v jsonb;
 begin
-  v := public.claim_invitation('tok_julia');
+  v := public.claim_invitation('tok_zofia');
   if v->>'person_id' <> 'a0000000-0000-4000-8000-000000000007' then
     raise exception 'TEST: claim returned wrong person';
   end if;
@@ -636,7 +671,7 @@ end $$;
 -- Piotr (guardian + inviter) approves; ownership transfers and ALL
 -- guardianships close (kept as history).
 reset role;
-select set_config('test.inv_julia',
+select set_config('test.inv_zofia',
   (select id::text from public.invitations
    where person_id = 'a0000000-0000-4000-8000-000000000007'
      and claim_status = 'pending_approval'), false);
@@ -646,7 +681,7 @@ set role authenticated;
 do $$
 declare v jsonb;
 begin
-  v := public.approve_claim(current_setting('test.inv_julia')::uuid);
+  v := public.approve_claim(current_setting('test.inv_zofia')::uuid);
   if v->>'claimed_by' <> 'd0000000-0000-4000-8000-000000000005' then
     raise exception 'TEST: approve returned wrong claimer';
   end if;
@@ -1117,7 +1152,7 @@ begin
   if n <> 0 then raise exception 'TEST: notifications of other users leaked'; end if;
 end $$;
 
--- Tag notification: Piotr tags Julia (claimed by u5) in a family photo.
+-- Tag notification: Piotr tags Zofia's profile (claimed by u5) in a family photo.
 reset role;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
 set role authenticated;
@@ -1403,7 +1438,7 @@ begin
 end $$;
 
 -- tagged_in_photo is not sent for PRIVATE photos the recipient cannot
--- see: Anna tags Julia (claimed by u5) in her private photo b0..10.
+-- see: Anna tags Zofia's profile (claimed by u5) in her private photo b0..10.
 reset role;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', false);
 set role authenticated;
