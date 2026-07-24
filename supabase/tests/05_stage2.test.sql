@@ -528,5 +528,56 @@ begin
   end;
 end $$;
 
+-- ============================================================
+-- minors (migration 16)
+-- ============================================================
+
 reset role;
-select 'stage 2 guardianship + audit + relationship tests passed' as ok;
+select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', false);
+set role authenticated;
+
+-- Zosia (born 2015) is a minor; Julia (born 2005) is an adult.
+do $$
+begin
+  if not public.is_minor('a0000000-0000-4000-8000-000000000020') then
+    raise exception 'TEST: a child born 2015 must be a minor';
+  end if;
+  if public.is_minor('a0000000-0000-4000-8000-000000000007') then
+    raise exception 'TEST: a person born 2005 must not be a minor';
+  end if;
+  -- Deceased and birth-date-less profiles are not minors.
+  if public.is_minor('a0000000-0000-4000-8000-000000000006') then
+    raise exception 'TEST: a deceased person must not be a minor';
+  end if;
+end $$;
+
+-- HARD RULE: inviting a minor fails.
+do $$
+begin
+  begin
+    perform public.create_invitation('a0000000-0000-4000-8000-000000000020', 'tok_zosia');
+    raise exception 'TEST: inviting a minor must fail';
+  exception when others then
+    if sqlerrm <> 'person_is_minor' then raise; end if;
+  end;
+end $$;
+
+-- Inviting the adult (Julia, unclaimed) still works.
+do $$
+declare v jsonb;
+begin
+  v := public.create_invitation('a0000000-0000-4000-8000-000000000007', 'tok_julia');
+  if v->>'invitation_id' is null then
+    raise exception 'TEST: inviting an adult should work';
+  end if;
+end $$;
+
+-- All current privacy levels remain settable on a minor (family is the
+-- widest level today; the cap only bites for future wider levels).
+update public.persons set life_details_privacy = 'immediate_family'
+where id = 'a0000000-0000-4000-8000-000000000020';
+update public.persons set life_details_privacy = 'private'
+where id = 'a0000000-0000-4000-8000-000000000020';
+
+reset role;
+select 'stage 2 guardianship + audit + relationship + minor tests passed' as ok;

@@ -134,7 +134,8 @@
     "deleteProfile": "Usuń ten profil",
     "deleteConfirm": "Usunąć ten profil wraz z jego powiązaniami?",
     "timelineOf": "Oś czasu: {name}",
-    "noEventsYet": "Brak wydarzeń — dodaj jakieś i oznacz tę osobę jako uczestnika."
+    "noEventsYet": "Brak wydarzeń — dodaj jakieś i oznacz tę osobę jako uczestnika.",
+    "minorInviteBlocked": "Zaproszenia są niedostępne, dopóki ta osoba jest niepełnoletnia. Gdy osiągnie pełnoletność, opiekun będzie mógł zaprosić ją do przejęcia profilu."
   },
   "privacy": {
     "private": "Tylko ja",
@@ -478,6 +479,23 @@
       "takenDay": "Dzień wykonania",
       "linkedEvent": "Powiązane wydarzenie",
       "takeoverReviewed": "Przegląd profilu"
+    }
+  },
+  "guardians": {
+    "title": "Opiekunowie",
+    "empty": "Nie zapisano jeszcze opiekunów. Opiekun zarządza tym profilem, dopóki właściciel nie będzie mógł go przejąć.",
+    "addButton": "Dodaj opiekuna",
+    "selectGuardian": "Kto jest opiekunem?",
+    "typeLabel": "Rola",
+    "types": {
+      "parent": "Rodzic",
+      "legal_guardian": "Opiekun prawny"
+    },
+    "remove": "Usuń",
+    "minorNote": "Ten profil należy do osoby niepełnoletniej. Zarządzają nim opiekunowie, a jego widoczność jest ograniczona do rodziny.",
+    "errors": {
+      "notAllowed": "Tylko opiekunowie mogą zarządzać opiekunami tego profilu.",
+      "alreadyGuardian": "Ta osoba jest już aktywnym opiekunem."
     }
   }
 }

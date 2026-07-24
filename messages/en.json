@@ -134,7 +134,8 @@
     "deleteProfile": "Delete this profile",
     "deleteConfirm": "Delete this profile and its relationships?",
     "timelineOf": "{name}'s timeline",
-    "noEventsYet": "No events yet — add one and include them as a participant."
+    "noEventsYet": "No events yet — add one and include them as a participant.",
+    "minorInviteBlocked": "Invitations are unavailable while this person is a minor. Once they become an adult, a guardian can invite them to take over their profile."
   },
   "privacy": {
     "private": "Only me",
@@ -478,6 +479,23 @@
       "takenDay": "Day taken",
       "linkedEvent": "Linked event",
       "takeoverReviewed": "Profile review"
+    }
+  },
+  "guardians": {
+    "title": "Guardians",
+    "empty": "No guardians recorded yet. A guardian manages this profile until the person can take it over.",
+    "addButton": "Add guardian",
+    "selectGuardian": "Who is the guardian?",
+    "typeLabel": "Role",
+    "types": {
+      "parent": "Parent",
+      "legal_guardian": "Legal guardian"
+    },
+    "remove": "Remove",
+    "minorNote": "This profile belongs to a minor. Guardians manage it, and its visibility is capped at family level.",
+    "errors": {
+      "notAllowed": "Only guardians can manage this profile's guardians.",
+      "alreadyGuardian": "This person is already an active guardian."
     }
   }
 }
