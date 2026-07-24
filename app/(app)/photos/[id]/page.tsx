@@ -7,15 +7,18 @@ import {createSignedUrl} from '@/lib/media';
 import {formatPartialDate} from '@/lib/dates';
 import {personName, sortByBirth} from '@/lib/persons/relations';
 import {deletePhotoAction} from '@/lib/photos/actions';
-import {Button, Card, PersonAvatar} from '@/components/ui';
+import {Alert, Button, Card, PersonAvatar} from '@/components/ui';
 import {EditPhotoForm} from '@/components/photos/EditPhotoForm';
 
 export default async function PhotoDetailPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{id: string}>;
+  searchParams: Promise<{error?: string}>;
 }) {
   const {id} = await params;
+  const {error: pageError} = await searchParams;
   const ctx = await getFamilyContext();
   if (ctx === 'no-user') redirect('/login');
   if (ctx === 'no-family') redirect('/onboarding');
@@ -66,8 +69,35 @@ export default async function PhotoDetailPage({
     day: photo.taken_day
   });
 
+  const eventLabel = (event: {
+    type: string;
+    title: string | null;
+    event_year: number;
+    event_month?: number | null;
+    event_day?: number | null;
+  }) =>
+    `${event.title ?? tEvents(`types.${event.type}` as never)} · ${formatPartialDate({
+      year: event.event_year,
+      month: event.event_month ?? null,
+      day: event.event_day ?? null
+    })}`;
+
+  // Build the edit dropdown from recent events, but always include the
+  // photo's currently linked event even if it falls outside the top 100 —
+  // otherwise saving would silently clear the link.
+  const eventOptions = (eventsRaw ?? []).map((event) => ({
+    id: event.id,
+    label: eventLabel(event)
+  }));
+  if (linkedEvent && !eventOptions.some((option) => option.id === linkedEvent.id)) {
+    eventOptions.unshift({id: linkedEvent.id, label: eventLabel(linkedEvent)});
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-4">
+      {pageError === 'delete' ? (
+        <Alert tone="error">{t('photos.deleteFailed')}</Alert>
+      ) : null}
       <Link href="/photos" className="text-sm text-amber hover:underline">
         ← {t('photos.backToGallery')}
       </Link>
@@ -146,12 +176,7 @@ export default async function PhotoDetailPage({
             <EditPhotoForm
               photo={photo}
               persons={persons.map((person) => ({id: person.id, name: personName(person)}))}
-              events={(eventsRaw ?? []).map((event) => ({
-                id: event.id,
-                label: `${event.title ?? tEvents(`types.${event.type}`)} · ${formatPartialDate(
-                  {year: event.event_year, month: event.event_month, day: event.event_day}
-                )}`
-              }))}
+              events={eventOptions}
               taggedIds={taggedIds}
             />
             <form action={deletePhotoAction}>

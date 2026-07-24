@@ -230,6 +230,7 @@ export default async function DashboardPage() {
                       <li key={photo.id} className="shrink-0">
                         <Link
                           href={`/photos/${photo.id}`}
+                          aria-label={t('photos.openPhoto')}
                           className="block h-16 w-16 overflow-hidden rounded-lg border border-border bg-surface-sunken"
                         >
                           {url ? (

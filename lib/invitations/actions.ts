@@ -5,6 +5,7 @@ import {getLocale, getTranslations} from 'next-intl/server';
 import {createClient} from '@/lib/supabase/server';
 import {createAdminClient} from '@/lib/supabase/admin';
 import {generateInviteToken} from '@/lib/invitations/token';
+import {isLocale} from '@/i18n/config';
 import {dbErrorKey} from '@/lib/errors';
 import {renderBrandedEmail} from '@/emails/layout';
 import {sendEmail} from '@/emails/send';
@@ -127,7 +128,13 @@ export async function approveClaimAction(
         .select('first_name, last_name')
         .eq('id', result.person_id)
         .maybeSingle();
-      const locale = await getLocale();
+      // Localize to the RECIPIENT's saved locale (falling back to the
+      // approver's), not the approver's — this email is for the claimer.
+      const recipientLocale = userData.user?.user_metadata?.locale;
+      const locale =
+        typeof recipientLocale === 'string' && isLocale(recipientLocale)
+          ? recipientLocale
+          : await getLocale();
       const t = await getTranslations({locale, namespace: 'emails'});
       const tApp = await getTranslations({locale, namespace: 'app'});
       await sendEmail({

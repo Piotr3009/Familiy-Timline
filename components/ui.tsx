@@ -164,6 +164,9 @@ export function PersonAvatar({
     .join('');
   return (
     <span
+      role="img"
+      aria-label={name}
+      title={name}
       className={cx(
         'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-amber-soft font-heading text-amber-strong',
         AVATAR_SIZES[size],
@@ -172,8 +175,9 @@ export function PersonAvatar({
     >
       {src ? (
         // Signed URLs are short-lived; a plain img avoids next/image caching issues.
+        // The wrapper carries the accessible name, so the img is decorative.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={name} className="h-full w-full object-cover" />
+        <img src={src} alt="" className="h-full w-full object-cover" />
       ) : (
         <span aria-hidden>{initials}</span>
       )}

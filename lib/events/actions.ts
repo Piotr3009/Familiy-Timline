@@ -98,12 +98,17 @@ export async function createEventAction(
   if (error || !created) return {error: 'errors.unexpected'};
 
   if (fields.participantIds.length > 0) {
-    await supabase.from('event_persons').insert(
+    const {error: participantError} = await supabase.from('event_persons').insert(
       fields.participantIds.map((personId) => ({
         event_id: created.id,
         person_id: personId
       }))
     );
+    if (participantError) {
+      // Compensate: don't leave a half-populated event behind.
+      await supabase.from('events').delete().eq('id', created.id);
+      return {error: 'errors.unexpected'};
+    }
   }
 
   revalidatePath('/events');
@@ -148,17 +153,21 @@ export async function updateEventAction(
   const wanted = new Set(fields.participantIds);
   const toAdd = fields.participantIds.filter((id) => !current.has(id));
   const toRemove = [...current].filter((id) => !wanted.has(id));
+  // Add before remove and surface errors: a single stale/invalid id must
+  // not silently drop the existing participants while reporting success.
   if (toAdd.length > 0) {
-    await supabase
+    const {error: addError} = await supabase
       .from('event_persons')
       .insert(toAdd.map((personId) => ({event_id: eventId, person_id: personId})));
+    if (addError) return {error: 'errors.unexpected'};
   }
   if (toRemove.length > 0) {
-    await supabase
+    const {error: removeError} = await supabase
       .from('event_persons')
       .delete()
       .eq('event_id', eventId)
       .in('person_id', toRemove);
+    if (removeError) return {error: 'errors.unexpected'};
   }
 
   revalidatePath(`/events/${eventId}`);

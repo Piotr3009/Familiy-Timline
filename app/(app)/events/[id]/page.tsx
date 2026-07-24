@@ -111,6 +111,7 @@ export default async function EventDetailPage({
                   <li key={photo.id}>
                     <Link
                       href={`/photos/${photo.id}`}
+                      aria-label={t('photos.openPhoto')}
                       className="block aspect-square overflow-hidden rounded-lg border border-border bg-surface-sunken"
                     >
                       {url ? (
