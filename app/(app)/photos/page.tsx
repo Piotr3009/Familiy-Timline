@@ -31,16 +31,26 @@ export default async function PhotosPage({
     photoIdsForPerson = (tagged ?? []).map((tag) => tag.photo_id);
   }
 
-  let query = supabase
-    .from('photos')
-    .select('id, kind, storage_path_thumb, storage_path_original, description, privacy')
-    .eq('family_id', ctx.family.id)
-    .order('created_at', {ascending: false})
-    .limit(GALLERY_LIMIT);
-  if (photoIdsForPerson !== null) {
-    query = query.in('id', photoIdsForPerson.length > 0 ? photoIdsForPerson : ['']);
+  let photos: {
+    id: string;
+    kind: 'photo' | 'video';
+    storage_path_thumb: string | null;
+    storage_path_original: string;
+    description: string | null;
+    privacy: 'private' | 'immediate_family' | 'family';
+  }[] = [];
+  if (photoIdsForPerson === null || photoIdsForPerson.length > 0) {
+    let query = supabase
+      .from('photos')
+      .select('id, kind, storage_path_thumb, storage_path_original, description, privacy')
+      .eq('family_id', ctx.family.id)
+      .order('created_at', {ascending: false})
+      .limit(GALLERY_LIMIT);
+    if (photoIdsForPerson !== null) {
+      query = query.in('id', photoIdsForPerson);
+    }
+    photos = (await query).data ?? [];
   }
-  const {data: photos} = await query;
 
   const thumbPaths = (photos ?? [])
     .map((photo) => photo.storage_path_thumb)

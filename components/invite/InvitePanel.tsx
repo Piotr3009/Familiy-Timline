@@ -1,6 +1,6 @@
 'use client';
 
-import {useActionState, useState} from 'react';
+import {useActionState, useEffect, useState} from 'react';
 import {useTranslations} from 'next-intl';
 import {createInvitationAction, type InviteActionState} from '@/lib/invitations/actions';
 import {Alert, Button, Input, Label} from '@/components/ui';
@@ -32,6 +32,11 @@ export function InvitePanel({
   const t = useTranslations('invite');
   const tCommon = useTranslations();
   const [copied, setCopied] = useState(false);
+  // Resolved after mount to avoid a server/client hydration mismatch.
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && 'share' in navigator);
+  }, []);
   const [state, formAction, pending] = useActionState(createInvitationAction, {
     error: null
   } as InviteActionState);
@@ -97,7 +102,7 @@ export function InvitePanel({
             >
               {copied ? t('copied') : t('copyLink')}
             </Button>
-            {typeof navigator !== 'undefined' && 'share' in navigator ? (
+            {canShare ? (
               <Button
                 type="button"
                 variant="secondary"

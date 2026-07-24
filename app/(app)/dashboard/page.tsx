@@ -94,11 +94,14 @@ export default async function DashboardPage() {
     new Date()
   );
 
-  // Claims waiting for my approval (RLS narrows to mine).
+  // Claims waiting for my approval (RLS narrows visibility; exclude my
+  // own claims in other families — I cannot approve those).
   const {data: pendingInvitations} = await supabase
     .from('invitations')
     .select('id, person_id, claimed_by')
-    .eq('claim_status', 'pending_approval');
+    .eq('claim_status', 'pending_approval')
+    .eq('family_id', ctx.family.id)
+    .neq('claimed_by', ctx.user.id);
   const pendingClaims: PendingClaim[] = [];
   if (pendingInvitations && pendingInvitations.length > 0) {
     const admin = createAdminClient();

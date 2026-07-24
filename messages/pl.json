@@ -84,7 +84,8 @@
     "finish": "Przejdź do strony rodziny",
     "errors": {
       "familyNameRequired": "Nadaj swojej rodzinie nazwę."
-    }
+    },
+    "waitingForApproval": "Twoje zgłoszenie czeka na potwierdzenie przez kogoś z rodziny, że to naprawdę Ty. Damy znać e-mailem, gdy zostanie zatwierdzone."
   },
   "persons": {
     "firstName": "Imię",

@@ -84,7 +84,8 @@
     "finish": "Go to my family home",
     "errors": {
       "familyNameRequired": "Please give your family a name."
-    }
+    },
+    "waitingForApproval": "Your claim is waiting for a family member to confirm it is really you. We will email you when it is approved."
   },
   "persons": {
     "firstName": "First name",

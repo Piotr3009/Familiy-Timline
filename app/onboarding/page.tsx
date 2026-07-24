@@ -12,12 +12,33 @@ export default async function OnboardingPage() {
   const t = await getTranslations();
 
   if (ctx === 'no-family') {
+    // A claimed-but-not-yet-approved user is waiting, not founding.
+    const supabaseUser = await createClient();
+    const {data: pendingClaim} = await supabaseUser
+      .from('invitations')
+      .select('id')
+      .eq('claim_status', 'pending_approval')
+      .limit(1)
+      .maybeSingle();
+
     return (
       <main className="mx-auto w-full max-w-md px-4 py-10">
         <h1 className="font-heading mb-6 text-center text-3xl text-amber">
           {t('onboarding.welcome')}
         </h1>
-        <CreateFamilyForm />
+        {pendingClaim ? (
+          <Card>
+            <div className="space-y-3 text-center">
+              <span aria-hidden className="text-4xl">
+                ⏳
+              </span>
+              <p className="text-sm text-ink-muted">{t('onboarding.waitingForApproval')}</p>
+            </div>
+          </Card>
+        ) : null}
+        <div className={pendingClaim ? 'mt-4' : undefined}>
+          <CreateFamilyForm />
+        </div>
       </main>
     );
   }
