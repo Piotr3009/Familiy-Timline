@@ -49,7 +49,11 @@ Storage, RLS) · Tailwind CSS v4 · next-intl (en/pl) · Resend · Vercel.
      password = your Resend API key, sender = the same `EMAIL_FROM`.
 4. Optional: point the auth email templates at the token_hash endpoint
    (`https://<your-domain>/auth/confirm?token_hash={{ .TokenHash }}&type=email`)
-   to keep links working across browsers.
+   to keep links working across browsers. Note that this template variant
+   cannot carry a post-verification destination, so for the
+   invite → register → verify → claim journey prefer the **default**
+   confirmation email (`{{ .ConfirmationURL }}`), whose code-flow link
+   goes through `/auth/callback` and preserves the `next` target.
 
 ### 3. Local development
 
@@ -115,3 +119,24 @@ storage objects follow photo privacy.
   stable English identifiers translated at display time.
 - **Types**: `lib/database.types.ts` mirrors the migrations; regenerate
   with `npx supabase gen types typescript` after schema changes.
+
+## Known limitations (tracked for a follow-up pass)
+
+Non-blocking items surfaced by the Stage 1 review that are safe to defer:
+
+- **Media byte quotas** are enforced by row count (hard) and by the
+  client-declared file size (soft). The DB trigger cannot see the real
+  uploaded bytes, so a client bypassing the app could understate size.
+  A bucket-level `file_size_limit` or a storage Edge Function would make
+  the byte cap authoritative.
+- **Invite-link lookup rate limiting** keys on a best-effort caller value
+  (an anonymous RPC has no trusted client IP through PostgREST). Because
+  tokens are 256-bit and unguessable this is DoS-hardening, not an
+  access-control boundary.
+- **Orphaned media rows**: a browser dying between the photos-row insert
+  and the file upload leaves a quota-consuming row with no file. A
+  periodic sweep of rows whose storage objects are missing would reclaim
+  them.
+- **Upcoming celebrations** are computed from `persons.birth_date` and
+  `wedding` events; `birth`-type events are intentionally not a second
+  birthday source to avoid duplicate reminders.
