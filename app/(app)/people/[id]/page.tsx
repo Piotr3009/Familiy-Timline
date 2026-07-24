@@ -15,6 +15,8 @@ import {
 } from '@/lib/persons/relations';
 import {computeAge, formatDate, formatPartialDate} from '@/lib/dates';
 import {createSignedUrl} from '@/lib/media';
+import {loadTimeline} from '@/lib/timeline';
+import {Timeline} from '@/components/timeline/Timeline';
 import {Card, PersonAvatar} from '@/components/ui';
 import {EditPersonForm} from '@/components/people/EditPersonForm';
 import {AvatarUpload} from '@/components/people/AvatarUpload';
@@ -62,6 +64,16 @@ function RelationList({
       </ul>
     </div>
   );
+}
+
+async function PersonTimeline({familyId, personId}: {familyId: string; personId: string}) {
+  const t = await getTranslations('persons');
+  const supabase = await createClient();
+  const entries = await loadTimeline(supabase, familyId, {kind: 'person', personId});
+  if (entries.length === 0) {
+    return <p className="text-sm text-ink-muted">{t('noEventsYet')}</p>;
+  }
+  return <Timeline entries={entries.slice(0, 20)} />;
 }
 
 export default async function PersonPage({params}: {params: Promise<{id: string}>}) {
@@ -267,6 +279,13 @@ export default async function PersonPage({params}: {params: Promise<{id: string}
             partnerOptions={partnerOptions}
           />
         </div>
+      </Card>
+
+      <Card>
+        <h2 className="font-heading mb-4 text-xl">
+          {t('persons.timelineOf', {name: person.first_name})}
+        </h2>
+        <PersonTimeline familyId={ctx.family.id} personId={person.id} />
       </Card>
 
       {canInvite ? (

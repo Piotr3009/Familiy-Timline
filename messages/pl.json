@@ -131,7 +131,9 @@
     "changeAvatar": "Zmień zdjęcie",
     "avatarUploadFailed": "Nie udało się przesłać zdjęcia. Spróbuj ponownie.",
     "deleteProfile": "Usuń ten profil",
-    "deleteConfirm": "Usunąć ten profil wraz z jego powiązaniami?"
+    "deleteConfirm": "Usunąć ten profil wraz z jego powiązaniami?",
+    "timelineOf": "Oś czasu: {name}",
+    "noEventsYet": "Brak wydarzeń — dodaj jakieś i oznacz tę osobę jako uczestnika."
   },
   "privacy": {
     "private": "Tylko ja",
@@ -272,7 +274,55 @@
       "notAllowed": "Nie możesz edytować tego zdjęcia."
     }
   },
+  "timeline": {
+    "title": "Rodzinna oś czasu",
+    "scopeFamily": "Rodzina",
+    "scopeMine": "Moja oś czasu",
+    "newestFirst": "Od najnowszych",
+    "oldestFirst": "Od najstarszych",
+    "emptyTitle": "Historia zaczyna się tutaj",
+    "emptyHint": "Dodaj pierwsze wydarzenie Waszej rodziny — ślub, narodziny, przeprowadzkę — i patrz, jak oś czasu ożywa.",
+    "emptyAction": "Dodaj pierwsze wydarzenie"
+  },
+  "dashboard": {
+    "greeting": "Witaj ponownie, {name}",
+    "miniTreeTitle": "Twoja najbliższa rodzina",
+    "openFullTree": "Otwórz całe drzewo",
+    "upcomingTitle": "Nadchodzące",
+    "upcomingEmpty": "Brak urodzin i rocznic w najbliższych tygodniach. Dodaj daty urodzenia, aby je tu zobaczyć.",
+    "turnsAge": "kończy {age} l.",
+    "anniversaryYears": "{years, plural, one {# rok} few {# lata} other {# lat}} razem",
+    "recentTitle": "Ostatnio dodane",
+    "recentEmptyTitle": "Jeszcze tu pusto",
+    "recentEmptyHint": "Nowe zdjęcia i wydarzenia Waszej rodziny pojawią się tutaj."
+  },
   "events": {
+    "title": "Wydarzenia",
+    "addButton": "Dodaj wydarzenie",
+    "emptyTitle": "Brak wydarzeń",
+    "emptyHint": "Śluby, narodziny, przeprowadzki, podróże — każda rodzinna historia składa się z chwil.",
+    "emptyAction": "Dodaj pierwsze wydarzenie",
+    "newTitle": "Dodaj wydarzenie",
+    "typeLabel": "Co się wydarzyło?",
+    "titleLabel": "Tytuł",
+    "titlePlaceholder": "np. Złote gody w Lublinie",
+    "dateLabel": "Kiedy?",
+    "yearRequiredHint": "rok jest wymagany",
+    "locationLabel": "Gdzie?",
+    "descriptionLabel": "Historia",
+    "participantsLabel": "Kto brał w tym udział?",
+    "privacyLabel": "Kto może zobaczyć",
+    "createButton": "Dodaj wydarzenie",
+    "backToTimeline": "Oś czasu",
+    "photosLabel": "Zdjęcia z tego wydarzenia",
+    "editTitle": "Edytuj wydarzenie",
+    "deleteButton": "Usuń wydarzenie",
+    "errors": {
+      "titleRequired": "Własne wydarzenia wymagają tytułu.",
+      "titleTooLong": "Tytuł może mieć najwyżej 200 znaków.",
+      "yearRequired": "Podaj przynajmniej rok.",
+      "notAllowed": "Nie możesz edytować tego wydarzenia."
+    },
     "types": {
       "birth": "Narodziny",
       "baptism": "Chrzest",

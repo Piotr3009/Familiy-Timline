@@ -131,7 +131,9 @@
     "changeAvatar": "Change photo",
     "avatarUploadFailed": "The photo could not be uploaded. Please try again.",
     "deleteProfile": "Delete this profile",
-    "deleteConfirm": "Delete this profile and its relationships?"
+    "deleteConfirm": "Delete this profile and its relationships?",
+    "timelineOf": "{name}'s timeline",
+    "noEventsYet": "No events yet — add one and include them as a participant."
   },
   "privacy": {
     "private": "Only me",
@@ -272,7 +274,55 @@
       "notAllowed": "You cannot edit this photo."
     }
   },
+  "timeline": {
+    "title": "Family timeline",
+    "scopeFamily": "Family",
+    "scopeMine": "My timeline",
+    "newestFirst": "Newest first",
+    "oldestFirst": "Oldest first",
+    "emptyTitle": "The story starts here",
+    "emptyHint": "Add your family's first event — a wedding, a birth, a move — and watch the timeline come alive.",
+    "emptyAction": "Add the first event"
+  },
+  "dashboard": {
+    "greeting": "Welcome back, {name}",
+    "miniTreeTitle": "Your closest family",
+    "openFullTree": "Open the full tree",
+    "upcomingTitle": "Coming up",
+    "upcomingEmpty": "No birthdays or anniversaries in the next weeks. Add birth dates to see them here.",
+    "turnsAge": "turns {age}",
+    "anniversaryYears": "{years, plural, one {# year} other {# years}} together",
+    "recentTitle": "Recently added",
+    "recentEmptyTitle": "Nothing here yet",
+    "recentEmptyHint": "New photos and events from your family will appear here."
+  },
   "events": {
+    "title": "Events",
+    "addButton": "Add event",
+    "emptyTitle": "No events yet",
+    "emptyHint": "Weddings, births, moves, journeys — every family story is made of moments.",
+    "emptyAction": "Add the first event",
+    "newTitle": "Add an event",
+    "typeLabel": "What happened?",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Golden wedding in Lublin",
+    "dateLabel": "When?",
+    "yearRequiredHint": "year is required",
+    "locationLabel": "Where?",
+    "descriptionLabel": "The story",
+    "participantsLabel": "Who was part of it?",
+    "privacyLabel": "Who can see it",
+    "createButton": "Add event",
+    "backToTimeline": "Timeline",
+    "photosLabel": "Photos from this event",
+    "editTitle": "Edit event",
+    "deleteButton": "Delete event",
+    "errors": {
+      "titleRequired": "Custom events need a title.",
+      "titleTooLong": "The title can be at most 200 characters.",
+      "yearRequired": "Please enter at least the year.",
+      "notAllowed": "You cannot edit this event."
+    },
     "types": {
       "birth": "Birth",
       "baptism": "Baptism",
