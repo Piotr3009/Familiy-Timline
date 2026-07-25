@@ -1,5 +1,5 @@
 import type {Metadata, Viewport} from 'next';
-import {Inter, Playfair_Display} from 'next/font/google';
+import {Inter, Lora} from 'next/font/google';
 import {cookies} from 'next/headers';
 import {NextIntlClientProvider} from 'next-intl';
 import {getLocale, getMessages, getTranslations} from 'next-intl/server';
@@ -12,7 +12,7 @@ const inter = Inter({
   display: 'swap'
 });
 
-const playfair = Playfair_Display({
+const lora = Lora({
   subsets: ['latin', 'latin-ext'],
   variable: '--font-playfair',
   display: 'swap'
@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: [
-    {media: '(prefers-color-scheme: light)', color: '#faf6ef'},
+    {media: '(prefers-color-scheme: light)', color: '#faf5ea'},
     {media: '(prefers-color-scheme: dark)', color: '#201b16'}
   ],
   width: 'device-width',
@@ -61,7 +61,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
   return (
     <html
       lang={locale}
-      className={`${inter.variable} ${playfair.variable} ${theme === 'dark' ? 'dark' : ''}`}
+      className={`${inter.variable} ${lora.variable} ${theme === 'dark' ? 'dark' : ''}`}
       suppressHydrationWarning
     >
       <head>

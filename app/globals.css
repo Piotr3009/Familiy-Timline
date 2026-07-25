@@ -10,30 +10,30 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Base surfaces — warm cream, never sterile white */
-  --color-surface: #faf6ef;
-  --color-surface-raised: #fffdf8;
-  --color-surface-sunken: #f3ede1;
-  --color-border: #e6dcc9;
-  --color-border-strong: #d3c5a9;
+  /* Base surfaces — warm album cream (approved "Our roots" design) */
+  --color-surface: #faf5ea;
+  --color-surface-raised: #fffdf7;
+  --color-surface-sunken: #f3ecdc;
+  --color-border: #eadfc7;
+  --color-border-strong: #d8c8a6;
 
   /* Text — warm near-black */
-  --color-ink: #2b2118;
-  --color-ink-muted: #6f6353;
-  --color-ink-faint: #9a8d79;
+  --color-ink: #2e271d;
+  --color-ink-muted: #6e6250;
+  --color-ink-faint: #9b8d77;
 
-  /* Accents */
-  --color-amber: #b45309;
-  --color-amber-strong: #92400e;
-  --color-amber-soft: #fdeed7;
-  --color-brown: #7c5c3e;
-  --color-green: #2f6b4f;
-  --color-green-soft: #e2efe7;
+  /* Accents — vivid warm orange as the primary action color */
+  --color-amber: #d9782a;
+  --color-amber-strong: #b95d14;
+  --color-amber-soft: #fbe9d2;
+  --color-brown: #8a6b4a;
+  --color-green: #5e7a46;
+  --color-green-soft: #edf1de;
   --color-danger: #b3403a;
   --color-danger-soft: #fbe9e7;
 
-  /* Timeline / tree lines */
-  --color-line: #cbbda2;
+  /* Timeline / tree lines — olive branch green */
+  --color-line: #a9b183;
 }
 
 .dark {
@@ -48,16 +48,16 @@
   --color-ink-muted: #b3a68f;
   --color-ink-faint: #877a67;
 
-  --color-amber: #e8963f;
-  --color-amber-strong: #f2ad63;
-  --color-amber-soft: #3d2c17;
+  --color-amber: #ec9445;
+  --color-amber-strong: #f4ab68;
+  --color-amber-soft: #3f2b15;
   --color-brown: #b08b64;
-  --color-green: #6fae8e;
-  --color-green-soft: #22352b;
+  --color-green: #97a76a;
+  --color-green-soft: #262e1c;
   --color-danger: #e07a72;
   --color-danger-soft: #402320;
 
-  --color-line: #55483a;
+  --color-line: #5c6142;
 }
 
 @theme inline {
@@ -95,4 +95,46 @@ body {
 /* Headings and person/family names get the heritage serif */
 .font-heading {
   font-family: var(--font-serif);
+}
+
+/*
+ * Decorative layers for the "Our roots. Our future." look.
+ * Rendered by <BackgroundDecor/>; pointer-events are disabled so the
+ * artwork never intercepts clicks, and opacity drops in dark mode so
+ * photos and text keep gallery-grade contrast.
+ */
+.decor-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.decor-landscape {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  width: 100%;
+  height: min(38vh, 340px);
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 0.55;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 45%);
+  mask-image: linear-gradient(180deg, transparent 0%, black 45%);
+}
+.decor-sprig {
+  position: absolute;
+  opacity: 0.5;
+}
+.dark .decor-landscape {
+  opacity: 0.14;
+  filter: saturate(0.7);
+}
+.dark .decor-sprig {
+  opacity: 0.16;
+}
+/* Content above decor */
+.app-content {
+  position: relative;
+  z-index: 1;
 }
