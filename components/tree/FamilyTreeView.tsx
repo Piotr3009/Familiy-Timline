@@ -59,7 +59,7 @@ export function FamilyTreeView({
               points={edge.points.map((point) => `${point.x},${point.y}`).join(' ')}
               fill="none"
               stroke="var(--color-line)"
-              strokeWidth={2}
+              strokeWidth={1.5}
               strokeDasharray={edge.dashed ? '6 5' : undefined}
               strokeLinejoin="round"
             />
@@ -91,12 +91,14 @@ export function FamilyTreeView({
                 {youLabel}
               </span>
             ) : null}
-            <PersonAvatar
-              name={personName(node.person)}
-              src={node.person.avatar_url ? avatarUrls.get(node.person.avatar_url) : null}
-              size="md"
-              deceased={node.person.is_deceased}
-            />
+            <span className="rounded-full bg-surface-raised p-0.5 shadow ring-1 ring-border">
+              <PersonAvatar
+                name={personName(node.person)}
+                src={node.person.avatar_url ? avatarUrls.get(node.person.avatar_url) : null}
+                size="tree"
+                deceased={node.person.is_deceased}
+              />
+            </span>
             <span className="font-heading line-clamp-2 text-sm leading-tight text-ink">
               {personName(node.person)}
             </span>

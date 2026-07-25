@@ -49,16 +49,24 @@ export async function TreeSidePanel({
   );
 
   return (
-    <aside className="hidden w-72 shrink-0 space-y-4 lg:block">
+    <aside className="hidden w-80 shrink-0 space-y-4 xl:block">
       <div className="overflow-hidden rounded-card border border-border bg-surface-raised shadow-sm">
-        <div className="flex items-center justify-center bg-surface-sunken p-4">
-          <PersonAvatar
-            name={personName(person)}
+        {avatarUrl ? (
+          <img
             src={avatarUrl}
-            size="lg"
-            deceased={person.is_deceased}
+            alt={personName(person)}
+            className="h-44 w-full object-cover"
           />
-        </div>
+        ) : (
+          <div className="flex items-center justify-center bg-surface-sunken p-6">
+            <PersonAvatar
+              name={personName(person)}
+              src={null}
+              size="lg"
+              deceased={person.is_deceased}
+            />
+          </div>
+        )}
         <div className="space-y-4 p-4">
           <div>
             <h2 className="font-heading text-xl text-ink">{personName(person)}</h2>

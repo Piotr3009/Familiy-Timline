@@ -103,34 +103,40 @@ export default async function TreePage({
     {value: eventsCount ?? 0, label: t('tree.statsEvents')}
   ];
 
+  const statIcons = ['👤', '🖼️', '📅'];
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-md space-y-2">
-          <h1 className="font-heading text-3xl leading-tight text-ink sm:text-4xl">
-            {t('tree.heroTitle1')}{' '}
-            <span className="text-amber">{t('tree.heroTitle2')}</span>
-          </h1>
-          <p className="text-sm text-ink-muted">{t('tree.heroTagline')}</p>
-          <Link
-            href={`/people/${focusId}`}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-amber px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-strong"
-          >
-            <span aria-hidden>+</span> {t('tree.addMember')}
-          </Link>
-        </div>
-        <div className="flex gap-3">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="min-w-20 rounded-card border border-border bg-surface-raised/85 px-4 py-3 text-center shadow-sm"
+    <div className="relative left-1/2 w-screen max-w-[1440px] -translate-x-1/2 space-y-5 px-4 sm:px-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="shrink-0 space-y-4 lg:w-64">
+          <div className="space-y-2">
+            <h1 className="font-heading text-4xl leading-tight text-ink">
+              {t('tree.heroTitle1')}
+              <br />
+              <span className="text-amber">{t('tree.heroTitle2')}</span>
+            </h1>
+            <p className="text-sm text-ink-muted">{t('tree.heroTagline')}</p>
+            <Link
+              href={`/people/${focusId}`}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-strong"
             >
-              <p className="font-heading text-xl text-ink">{stat.value}</p>
-              <p className="text-xs text-ink-muted">{stat.label}</p>
-            </div>
-          ))}
+              <span aria-hidden>+</span> {t('tree.addMember')}
+            </Link>
+          </div>
+          <div className="hidden w-44 space-y-3 rounded-card border border-border bg-surface-raised/90 p-4 shadow-sm lg:block">
+            {stats.map((stat, index) => (
+              <div key={stat.label} className="flex items-center gap-3">
+                <span aria-hidden className="text-lg">
+                  {statIcons[index]}
+                </span>
+                <div>
+                  <p className="font-heading text-lg leading-none text-ink">{stat.value}</p>
+                  <p className="text-xs text-ink-muted">{stat.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+        <div className="min-w-0 flex-1 space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="sr-only">{t('tree.title')}</h2>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -172,8 +178,7 @@ export default async function TreePage({
         </div>
       </div>
       {layout ? (
-        <div className="flex items-start gap-5">
-          <div className="min-w-0 flex-1 space-y-2">
+        <div className="min-w-0 space-y-2">
           <FamilyTreeView
             layout={layout}
             avatarUrls={avatarUrls}
@@ -188,17 +193,18 @@ export default async function TreePage({
           <p className="text-center text-xs text-ink-faint">
             {t('tree.hint', {name: focusPerson.first_name})}
           </p>
-          </div>
-          <TreeSidePanel
-            person={focusPerson}
-            avatarUrl={focusAvatarUrl}
-            parents={focusParents}
-            spouse={focusSpouse}
-            childList={focusChildren}
-            isYou={ctx.person?.id === focusId}
-          />
         </div>
       ) : null}
+        </div>
+        <TreeSidePanel
+          person={focusPerson}
+          avatarUrl={focusAvatarUrl}
+          parents={focusParents}
+          spouse={focusSpouse}
+          childList={focusChildren}
+          isYou={ctx.person?.id === focusId}
+        />
+      </div>
     </div>
   );
 }

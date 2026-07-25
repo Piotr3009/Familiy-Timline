@@ -4,11 +4,21 @@ import {getFamilyContext} from '@/lib/family';
 import {AppNav} from '@/components/AppNav';
 import {BackgroundDecor} from '@/components/BackgroundDecor';
 import {NotificationsBell} from '@/components/notifications/NotificationsBell';
+import {PersonAvatar} from '@/components/ui';
+import {personName} from '@/lib/persons/relations';
+import {createClient} from '@/lib/supabase/server';
+import {createSignedUrls} from '@/lib/media';
 
 export default async function AppLayout({children}: {children: React.ReactNode}) {
   const ctx = await getFamilyContext();
   if (ctx === 'no-user') redirect('/login');
   if (ctx === 'no-family') redirect('/onboarding');
+  let headerAvatarUrl: string | null = null;
+  if (ctx.person?.avatar_url) {
+    const supabase = await createClient();
+    const urls = await createSignedUrls(supabase, 'avatars', [ctx.person.avatar_url]);
+    headerAvatarUrl = urls.get(ctx.person.avatar_url) ?? null;
+  }
 
   return (
     <div className="min-h-dvh pb-20 sm:pb-0">
@@ -23,6 +33,21 @@ export default async function AppLayout({children}: {children: React.ReactNode})
           <div className="flex items-center gap-1">
             <AppNav />
             <NotificationsBell userId={ctx.user.id} />
+            {ctx.person ? (
+              <Link
+                href={`/people/${ctx.person.id}`}
+                className="ml-1 hidden items-center gap-2 rounded-full border border-border bg-surface-raised py-1 pl-1 pr-3 sm:flex"
+              >
+                <PersonAvatar
+                  name={personName(ctx.person)}
+                  src={headerAvatarUrl}
+                  size="sm"
+                />
+                <span className="max-w-32 truncate text-sm text-ink">
+                  {personName(ctx.person)}
+                </span>
+              </Link>
+            ) : null}
           </div>
         </div>
       </header>
