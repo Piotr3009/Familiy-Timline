@@ -11,11 +11,11 @@
 
 :root {
   /* Base surfaces — warm album cream (approved "Our roots" design) */
-  --color-surface: #faf5ea;
-  --color-surface-raised: #fffdf7;
-  --color-surface-sunken: #f3ecdc;
-  --color-border: #eadfc7;
-  --color-border-strong: #d8c8a6;
+  --color-surface: #f4ecd9;
+  --color-surface-raised: #fdf8ec;
+  --color-surface-sunken: #eadfc6;
+  --color-border: #ddcfab;
+  --color-border-strong: #c7b489;
 
   /* Text — warm near-black */
   --color-ink: #2e271d;
@@ -118,13 +118,13 @@ body {
   height: min(38vh, 340px);
   object-fit: cover;
   object-position: center bottom;
-  opacity: 0.55;
+  opacity: 0.8;
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 45%);
   mask-image: linear-gradient(180deg, transparent 0%, black 45%);
 }
 .decor-sprig {
   position: absolute;
-  opacity: 0.5;
+  opacity: 0.65;
 }
 .dark .decor-landscape {
   opacity: 0.14;

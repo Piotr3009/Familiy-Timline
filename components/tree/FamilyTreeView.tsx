@@ -28,10 +28,10 @@ export function FamilyTreeView({
 }) {
   // Siblings render muted so the couple block reads as the visual core.
   const cardClass: Record<TreeNodeVariant, string> = {
-    focus: 'border-amber ring-2 ring-amber/70 bg-surface-raised shadow-md',
-    partner: 'border-border bg-surface-raised',
-    sibling: 'border-border/70 bg-surface/90 opacity-90',
-    relative: 'border-border bg-surface-raised'
+    focus: 'border-amber ring-2 ring-amber/70 bg-surface-raised shadow-lg',
+    partner: 'border-border bg-surface-raised shadow-sm',
+    sibling: 'border-border bg-surface-raised/90 shadow-sm',
+    relative: 'border-border bg-surface-raised shadow-sm'
   };
   return (
     <TreeScroller
@@ -40,7 +40,7 @@ export function FamilyTreeView({
       contentWidth={layout.width + 48}
       contentHeight={layout.height + 48}
       labels={zoomLabels}
-      className="overflow-auto rounded-card border border-border bg-surface-raised/80 pb-14 backdrop-blur-sm"
+      className="overflow-auto pb-14"
     >
       <div className="p-6">
       <div
