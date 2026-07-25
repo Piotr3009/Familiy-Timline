@@ -1,5 +1,5 @@
 import type {Metadata, Viewport} from 'next';
-import {Inter, Lora} from 'next/font/google';
+import {Inter, Kaushan_Script, Playfair_Display} from 'next/font/google';
 import {cookies} from 'next/headers';
 import {NextIntlClientProvider} from 'next-intl';
 import {getLocale, getMessages, getTranslations} from 'next-intl/server';
@@ -12,9 +12,17 @@ const inter = Inter({
   display: 'swap'
 });
 
-const lora = Lora({
+const playfair = Playfair_Display({
   subsets: ['latin', 'latin-ext'],
+  weight: ['700'],
   variable: '--font-playfair',
+  display: 'swap'
+});
+
+const kaushan = Kaushan_Script({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-logo',
   display: 'swap'
 });
 
@@ -61,7 +69,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
   return (
     <html
       lang={locale}
-      className={`${inter.variable} ${lora.variable} ${theme === 'dark' ? 'dark' : ''}`}
+      className={`${inter.variable} ${playfair.variable} ${kaushan.variable} ${theme === 'dark' ? 'dark' : ''}`}
       suppressHydrationWarning
     >
       <head>

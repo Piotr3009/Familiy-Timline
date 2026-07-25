@@ -23,10 +23,10 @@ export default async function AppLayout({children}: {children: React.ReactNode})
   return (
     <div className="min-h-dvh pb-20 sm:pb-0">
       <BackgroundDecor />
-      <header className="sticky top-0 z-30 border-b border-border bg-surface/85 backdrop-blur">
+      <header className="sticky top-0 z-30 bg-surface-raised/95 shadow-[0_4px_22px_rgba(78,55,28,0.05)] backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
           <Link href="/dashboard" className="min-w-0">
-            <span className="font-heading block truncate text-lg font-semibold italic text-amber sm:text-xl">
+            <span className="font-logo block truncate text-xl text-[#cc5d00] sm:text-2xl">
               {ctx.family.name}
             </span>
           </Link>

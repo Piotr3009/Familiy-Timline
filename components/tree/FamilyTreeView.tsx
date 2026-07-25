@@ -28,10 +28,11 @@ export function FamilyTreeView({
 }) {
   // Siblings render muted so the couple block reads as the visual core.
   const cardClass: Record<TreeNodeVariant, string> = {
-    focus: 'border-amber ring-2 ring-amber/70 bg-surface-raised shadow-lg',
-    partner: 'border-border bg-surface-raised shadow-sm',
-    sibling: 'border-border bg-surface-raised/90 shadow-sm',
-    relative: 'border-border bg-surface-raised shadow-sm'
+    focus:
+      'border-amber ring-1 ring-amber/60 bg-surface-raised/95 shadow-[0_10px_24px_rgba(86,58,26,0.16)]',
+    partner: 'border-border bg-surface-raised/95 shadow-[0_7px_18px_rgba(86,58,26,0.11)]',
+    sibling: 'border-border bg-surface-raised/90 shadow-[0_7px_18px_rgba(86,58,26,0.09)]',
+    relative: 'border-border bg-surface-raised/95 shadow-[0_7px_18px_rgba(86,58,26,0.11)]'
   };
   return (
     <TreeScroller
@@ -59,8 +60,9 @@ export function FamilyTreeView({
               points={edge.points.map((point) => `${point.x},${point.y}`).join(' ')}
               fill="none"
               stroke="var(--color-line)"
-              strokeWidth={1.5}
+              strokeWidth={1.25}
               strokeDasharray={edge.dashed ? '6 5' : undefined}
+              strokeLinecap="round"
               strokeLinejoin="round"
             />
           ))}
@@ -83,15 +85,19 @@ export function FamilyTreeView({
           <Link
             key={node.person.id}
             href={`/people/${node.person.id}`}
-            className={`absolute flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center shadow-sm transition-shadow hover:shadow-md ${cardClass[node.variant]}`}
+            className={`absolute flex flex-col items-center gap-1 rounded-[15px] border px-2 pb-3 pt-3 text-center transition-shadow hover:shadow-lg ${cardClass[node.variant]}`}
             style={{left: node.x, top: node.y, width: CARD_W, height: CARD_H}}
           >
             {node.isFocus && youLabel ? (
-              <span className="absolute -top-2.5 rounded-full bg-amber px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm">
+              <span className="absolute -right-px -top-px rounded-bl-[10px] rounded-tr-[13px] bg-amber px-2 py-1 text-[11px] font-medium text-white">
                 {youLabel}
               </span>
             ) : null}
-            <span className="rounded-full bg-surface-raised p-0.5 shadow ring-1 ring-border">
+            <span
+              className={`overflow-hidden rounded-full ${
+                node.isFocus ? 'border-2 border-amber' : 'border border-border'
+              }`}
+            >
               <PersonAvatar
                 name={personName(node.person)}
                 src={node.person.avatar_url ? avatarUrls.get(node.person.avatar_url) : null}
@@ -99,8 +105,11 @@ export function FamilyTreeView({
                 deceased={node.person.is_deceased}
               />
             </span>
-            <span className="font-heading line-clamp-2 text-sm leading-tight text-ink">
-              {personName(node.person)}
+            <span className="mt-1 text-[13px] leading-tight text-ink">
+              {node.person.first_name}
+            </span>
+            <span className="font-heading line-clamp-1 text-[15px] leading-tight text-ink">
+              {node.person.last_name}
             </span>
             <span className="text-xs text-ink-faint">
               {lifeSpan(

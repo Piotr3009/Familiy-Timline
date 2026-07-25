@@ -11,20 +11,20 @@
 
 :root {
   /* Base surfaces — warm album cream (approved "Our roots" design) */
-  --color-surface: #f4ecd9;
-  --color-surface-raised: #fdf8ec;
-  --color-surface-sunken: #eadfc6;
-  --color-border: #ddcfab;
-  --color-border-strong: #c7b489;
+  --color-surface: #faf5eb;
+  --color-surface-raised: #fffdf8;
+  --color-surface-sunken: #f0e7d3;
+  --color-border: #eaddc9;
+  --color-border-strong: #d8c5a4;
 
   /* Text — warm near-black */
-  --color-ink: #2e271d;
-  --color-ink-muted: #6e6250;
-  --color-ink-faint: #9b8d77;
+  --color-ink: #1d1e1b;
+  --color-ink-muted: #494b48;
+  --color-ink-faint: #8b8a85;
 
   /* Accents — vivid warm orange as the primary action color */
-  --color-amber: #d9782a;
-  --color-amber-strong: #b95d14;
+  --color-amber: #d26400;
+  --color-amber-strong: #bf5600;
   --color-amber-soft: #fbe9d2;
   --color-brown: #8a6b4a;
   --color-green: #5e7a46;
@@ -33,7 +33,7 @@
   --color-danger-soft: #fbe9e7;
 
   /* Timeline / tree lines — olive branch green */
-  --color-line: #a9b183;
+  --color-line: #6c7835;
 }
 
 .dark {
@@ -87,6 +87,8 @@
 
 body {
   background-color: var(--color-surface);
+  background-image: linear-gradient(180deg, #fbf8f1 0%, #fbf6ec 78%, #f5ead4 100%);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -95,6 +97,15 @@ body {
 /* Headings and person/family names get the heritage serif */
 .font-heading {
   font-family: var(--font-serif);
+}
+
+/* Handwritten family logotype ("Tarasek") */
+.font-logo {
+  font-family: var(--font-logo), cursive;
+}
+
+.dark body {
+  background-image: none;
 }
 
 /*

@@ -34,7 +34,7 @@ export function AppNav() {
               className={cx(
                 'relative px-3 py-2 text-sm transition-colors',
                 active
-                  ? 'font-medium text-amber-strong after:absolute after:inset-x-3 after:-bottom-[9px] after:h-0.5 after:rounded-full after:bg-amber'
+                  ? 'font-medium text-amber-strong after:absolute after:inset-x-3 after:-bottom-[13px] after:h-[3px] after:rounded-t-[3px] after:bg-amber'
                   : 'text-ink-muted hover:text-ink'
               )}
             >

@@ -86,7 +86,7 @@ export function TreeScroller({
       </div>
       {labels ? (
       <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-surface-raised/95 px-2 py-1 shadow-md backdrop-blur">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-[17px] border border-border bg-surface-raised/95 px-2 py-1 shadow-[0_7px_20px_rgba(85,57,26,0.12)] backdrop-blur">
           <button
             type="button"
             aria-label={labels.zoomOut}
