@@ -213,7 +213,20 @@
     "you": "Ty",
     "zoomIn": "Przybliż",
     "zoomOut": "Oddal",
-    "zoomFit": "Dopasuj"
+    "zoomFit": "Dopasuj",
+    "heroTitle1": "Nasze korzenie.",
+    "heroTitle2": "Nasza przyszłość.",
+    "heroTagline": "Jesteśmy historią, która wciąż rośnie.",
+    "addMember": "Dodaj członka rodziny",
+    "statsMembers": "Osoby",
+    "statsPhotos": "Zdjęcia",
+    "statsEvents": "Wydarzenia",
+    "panelBorn": "Urodzony(a)",
+    "panelParents": "Rodzice",
+    "panelSpouse": "Partner(ka)",
+    "panelChildren": "Dzieci",
+    "panelView": "Zobacz pełny profil",
+    "quote": "Miłość rodziny to największy dar życia."
   },
   "invite": {
     "invalid": "Ten link z zaproszeniem jest nieprawidłowy. Poproś kogoś z rodziny o sprawdzenie lub wysłanie nowego.",

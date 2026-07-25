@@ -213,7 +213,20 @@
     "you": "You",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "zoomFit": "Fit"
+    "zoomFit": "Fit",
+    "heroTitle1": "Our roots.",
+    "heroTitle2": "Our future.",
+    "heroTagline": "We are a story that continues to grow.",
+    "addMember": "Add family member",
+    "statsMembers": "Members",
+    "statsPhotos": "Photos",
+    "statsEvents": "Events",
+    "panelBorn": "Born",
+    "panelParents": "Parents",
+    "panelSpouse": "Spouse",
+    "panelChildren": "Children",
+    "panelView": "View full profile",
+    "quote": "The love of a family is life's greatest blessing."
   },
   "invite": {
     "invalid": "This invitation link is not valid. Ask your family member to check it or send a new one.",
