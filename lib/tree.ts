@@ -16,6 +16,8 @@ import {
  * children. Pure math in "column units"; the renderer converts to px.
  */
 
+export type TreeGenerations = 3 | 4 | 5;
+
 export const CARD_W = 128;
 export const CARD_H = 148;
 export const GAP_X = 24;
@@ -68,11 +70,12 @@ type Placed = {
 export function computeTreeLayout(
   graph: FamilyGraph,
   focusId: string,
-  options: {partnerFilter?: TreePartnerFilter} = {}
+  options: {partnerFilter?: TreePartnerFilter; generations?: TreeGenerations} = {}
 ): TreeLayout | null {
   const focus = graph.persons.get(focusId);
   if (!focus) return null;
   const partnerFilter = options.partnerFilter ?? 'all';
+  const generations = options.generations ?? 4;
 
   const parents = sortByBirth(parentsOf(graph, focusId)).slice(0, 2);
   const siblings = sortByBirth(siblingsOf(graph, focusId));
@@ -144,7 +147,8 @@ export function computeTreeLayout(
   // left-to-right to remove overlaps.
   type GrandGroup = {parentId: string; members: Placed[]};
   const grandGroups: GrandGroup[] = [];
-  for (const placedParent of parentPlacements) {
+  // generations = 3 (parents + focus + children) hides the grandparent row.
+  for (const placedParent of generations >= 4 ? parentPlacements : []) {
     const grandparents = sortByBirth(parentsOf(graph, placedParent.person.id)).slice(0, 2);
     if (grandparents.length === 0) continue;
     const members: Placed[] =
@@ -209,11 +213,34 @@ export function computeTreeLayout(
     prevGroupMax = startCol + group.members.length - 1;
   }
 
+  // Row 4 (generations = 5): each child's own children, centered under
+  // that child and swept left-to-right to remove overlaps.
+  const grandchildPlacements: Placed[] = [];
+  if (generations >= 5) {
+    let prevMax = Number.NEGATIVE_INFINITY;
+    for (const childPlaced of childPlacements) {
+      const grandkids = sortByBirth(childrenOf(graph, childPlaced.person.id));
+      if (grandkids.length === 0) continue;
+      let startCol = childPlaced.col - (grandkids.length - 1) / 2;
+      if (startCol <= prevMax) startCol = prevMax + 1;
+      grandkids.forEach((grandkid, index) =>
+        grandchildPlacements.push({
+          person: grandkid,
+          col: startCol + index,
+          row: 4,
+          variant: 'relative'
+        })
+      );
+      prevMax = startCol + grandkids.length - 1;
+    }
+  }
+
   const all: Placed[] = [
     ...grandGroups.flatMap((group) => group.members),
     ...parentPlacements,
     ...focusRow,
-    ...childPlacements
+    ...childPlacements,
+    ...grandchildPlacements
   ];
 
   // Normalize columns to start at 0 and drop empty rows.
@@ -318,6 +345,17 @@ export function computeTreeLayout(
       // Only parents sitting in the focus row form the drop anchor.
       .filter((node) => node.y === focusNode.y);
     drawParentDrop(childParentNodes.length > 0 ? childParentNodes : [focusNode], childNode);
+  }
+
+  // Children -> grandchildren (generations = 5).
+  for (const grandchildPlaced of grandchildPlacements) {
+    const grandchildNode = nodeById.get(grandchildPlaced.person.id);
+    if (!grandchildNode) continue;
+    const gcParentNodes = parentsOf(graph, grandchildPlaced.person.id)
+      .map((parent) => nodeById.get(parent.id))
+      .filter((node): node is TreeNode => Boolean(node))
+      .filter((node) => node.y < grandchildNode.y);
+    if (gcParentNodes.length > 0) drawParentDrop(gcParentNodes, grandchildNode);
   }
 
   const width = Math.max(...nodes.map((node) => node.x)) + CARD_W;

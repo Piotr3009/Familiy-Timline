@@ -13,26 +13,36 @@ import {TreeScroller} from '@/components/tree/TreeScroller';
 export function FamilyTreeView({
   layout,
   avatarUrls,
-  endedYearLabel
+  endedYearLabel,
+  youLabel,
+  zoomLabels
 }: {
   layout: TreeLayout;
   avatarUrls: Map<string, string>;
   /** Formats the end-year annotation on dashed partner lines. */
   endedYearLabel?: (year: number) => string;
+  /** Badge text shown on the viewer's own card ("You"). */
+  youLabel?: string;
+  /** Omit to hide the zoom bar (e.g. the dashboard mini tree). */
+  zoomLabels?: {zoomIn: string; zoomOut: string; fit: string};
 }) {
   // Siblings render muted so the couple block reads as the visual core.
   const cardClass: Record<TreeNodeVariant, string> = {
-    focus: 'border-amber ring-1 ring-amber bg-surface-raised',
+    focus: 'border-amber ring-2 ring-amber/70 bg-surface-raised shadow-md',
     partner: 'border-border bg-surface-raised',
-    sibling: 'border-border/70 bg-surface opacity-85',
+    sibling: 'border-border/70 bg-surface/90 opacity-90',
     relative: 'border-border bg-surface-raised'
   };
   return (
     <TreeScroller
       focusX={layout.focusCenter.x}
       focusY={layout.focusCenter.y}
-      className="overflow-auto rounded-card border border-border bg-surface-raised p-6"
+      contentWidth={layout.width + 48}
+      contentHeight={layout.height + 48}
+      labels={zoomLabels}
+      className="overflow-auto rounded-card border border-border bg-surface-raised/80 pb-14 backdrop-blur-sm"
     >
+      <div className="p-6">
       <div
         className="relative mx-auto"
         style={{width: layout.width, height: layout.height}}
@@ -76,6 +86,11 @@ export function FamilyTreeView({
             className={`absolute flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center shadow-sm transition-shadow hover:shadow-md ${cardClass[node.variant]}`}
             style={{left: node.x, top: node.y, width: CARD_W, height: CARD_H}}
           >
+            {node.isFocus && youLabel ? (
+              <span className="absolute -top-2.5 rounded-full bg-amber px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm">
+                {youLabel}
+              </span>
+            ) : null}
             <PersonAvatar
               name={personName(node.person)}
               src={node.person.avatar_url ? avatarUrls.get(node.person.avatar_url) : null}
@@ -102,6 +117,7 @@ export function FamilyTreeView({
             </span>
           </Link>
         ))}
+      </div>
       </div>
     </TreeScroller>
   );

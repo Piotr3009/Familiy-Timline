@@ -208,7 +208,12 @@
     "filterLabel": "Widoczne związki",
     "filterCurrent": "Tylko obecne",
     "filterAll": "Wszystkie (także dawne)",
-    "endedYear": "do {year}"
+    "endedYear": "do {year}",
+    "generations": "{count, plural, few {# pokolenia} many {# pokoleń} other {# pokolenia}}",
+    "you": "Ty",
+    "zoomIn": "Przybliż",
+    "zoomOut": "Oddal",
+    "zoomFit": "Dopasuj"
   },
   "invite": {
     "invalid": "Ten link z zaproszeniem jest nieprawidłowy. Poproś kogoś z rodziny o sprawdzenie lub wysłanie nowego.",

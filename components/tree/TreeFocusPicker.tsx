@@ -6,11 +6,14 @@ import {Select} from '@/components/ui';
 export function TreeFocusPicker({
   options,
   value,
-  label
+  label,
+  extraQuery = ''
 }: {
   options: {id: string; name: string}[];
   value: string;
   label: string;
+  /** Preserves sibling controls (partner filter, generations) on change. */
+  extraQuery?: string;
 }) {
   const router = useRouter();
   return (
@@ -18,7 +21,7 @@ export function TreeFocusPicker({
       <span className="whitespace-nowrap">{label}</span>
       <Select
         value={value}
-        onChange={(event) => router.push(`/tree?focus=${event.target.value}`)}
+        onChange={(event) => router.push(`/tree?focus=${event.target.value}${extraQuery}`)}
         className="w-auto min-w-40"
       >
         {options.map((option) => (

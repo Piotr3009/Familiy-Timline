@@ -4,12 +4,13 @@ import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {getFamilyContext} from '@/lib/family';
 import {loadFamilyGraph, personName, sortByBirth} from '@/lib/persons/relations';
-import {computeTreeLayout, type TreePartnerFilter} from '@/lib/tree';
+import {computeTreeLayout, type TreeGenerations, type TreePartnerFilter} from '@/lib/tree';
 import {createSignedUrls} from '@/lib/media';
 import {setTreePartnerFilterAction} from '@/lib/settings/actions';
 import {Button, EmptyState, cx} from '@/components/ui';
 import {FamilyTreeView} from '@/components/tree/FamilyTreeView';
 import {TreeFocusPicker} from '@/components/tree/TreeFocusPicker';
+import {TreeGenerationsPicker} from '@/components/tree/TreeGenerationsPicker';
 
 function isPartnerFilter(value: string | undefined): value is TreePartnerFilter {
   return value === 'all' || value === 'current';
@@ -18,9 +19,9 @@ function isPartnerFilter(value: string | undefined): value is TreePartnerFilter 
 export default async function TreePage({
   searchParams
 }: {
-  searchParams: Promise<{focus?: string; partners?: string}>;
+  searchParams: Promise<{focus?: string; partners?: string; gens?: string}>;
 }) {
-  const {focus, partners} = await searchParams;
+  const {focus, partners, gens} = await searchParams;
   const ctx = await getFamilyContext();
   if (ctx === 'no-user') redirect('/login');
   if (ctx === 'no-family') redirect('/onboarding');
@@ -35,6 +36,9 @@ export default async function TreePage({
     : isPartnerFilter(storedFilter)
       ? storedFilter
       : 'current';
+
+  const generations: TreeGenerations =
+    gens === '3' ? 3 : gens === '5' ? 5 : 4;
 
   const graph = await loadFamilyGraph(supabase, ctx.family.id);
   if (graph.persons.size === 0) {
@@ -56,7 +60,7 @@ export default async function TreePage({
     focus && graph.persons.has(focus)
       ? focus
       : ctx.person?.id ?? [...graph.persons.keys()][0]!;
-  const layout = computeTreeLayout(graph, focusId, {partnerFilter});
+  const layout = computeTreeLayout(graph, focusId, {partnerFilter, generations});
 
   const avatarPaths = layout
     ? layout.nodes
@@ -96,10 +100,20 @@ export default async function TreePage({
               </button>
             ))}
           </form>
+          <TreeGenerationsPicker
+            value={generations}
+            focusId={focusId}
+            partnerFilter={partnerFilter}
+            options={([3, 4, 5] as const).map((value) => ({
+              value,
+              label: t('tree.generations', {count: value})
+            }))}
+          />
           <TreeFocusPicker
             options={options}
             value={focusId}
             label={t('tree.centerOn')}
+            extraQuery={`&partners=${partnerFilter}&gens=${generations}`}
           />
         </div>
       </div>
@@ -109,6 +123,12 @@ export default async function TreePage({
             layout={layout}
             avatarUrls={avatarUrls}
             endedYearLabel={(year) => t('tree.endedYear', {year})}
+            youLabel={ctx.person?.id === focusId ? t('tree.you') : undefined}
+            zoomLabels={{
+              zoomIn: t('tree.zoomIn'),
+              zoomOut: t('tree.zoomOut'),
+              fit: t('tree.zoomFit')
+            }}
           />
           <p className="text-center text-xs text-ink-faint">
             {t('tree.hint', {name: focusPerson.first_name})}

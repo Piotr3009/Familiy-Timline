@@ -208,7 +208,12 @@
     "filterLabel": "Relationships shown",
     "filterCurrent": "Current only",
     "filterAll": "All (including past)",
-    "endedYear": "ended {year}"
+    "endedYear": "ended {year}",
+    "generations": "{count, plural, other {# generations}}",
+    "you": "You",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Fit"
   },
   "invite": {
     "invalid": "This invitation link is not valid. Ask your family member to check it or send a new one.",

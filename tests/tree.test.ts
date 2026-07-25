@@ -228,6 +228,29 @@ describe('computeTreeLayout', () => {
     });
   });
 
+  it('hides the grandparent row at 3 generations and adds grandchildren at 5', () => {
+    const graph = buildGraph();
+    graph.persons.set('gkid', person('gkid', 'GrandKid', 2024));
+    graph.relationships.push(rel('r14', 'kid', 'gkid', 'parent_child'));
+
+    const three = computeTreeLayout(graph, 'dad', {generations: 3})!;
+    const rowCount = new Set(three.nodes.map((node) => node.y)).size;
+    expect(rowCount).toBe(3);
+    expect(three.nodes.some((node) => node.person.id === 'gkid')).toBe(false);
+
+    const four = computeTreeLayout(graph, 'dad', {generations: 5})!;
+    const kid = four.nodes.find((node) => node.person.id === 'kid')!;
+    const gkid = four.nodes.find((node) => node.person.id === 'gkid')!;
+    expect(gkid.y).toBeGreaterThan(kid.y);
+    expect(gkid.x).toBe(kid.x);
+    const hasEdge = four.edges.some(
+      (edge) =>
+        edge.points.at(-1)!.y === gkid.y &&
+        edge.points.at(-1)!.x === gkid.x + 128 / 2
+    );
+    expect(hasEdge).toBe(true);
+  });
+
   it('does not overlap grandparent groups when both sides have parents', () => {
     const graph = buildGraph();
     graph.persons.set('gp3', person('gp3', 'Opa', 1945));
