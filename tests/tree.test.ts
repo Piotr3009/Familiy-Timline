@@ -190,6 +190,44 @@ describe('computeTreeLayout', () => {
     expect(ids).toContain('mom'); // current partner stays
   });
 
+  it('keeps the partner adjacent to the focus with siblings outside the couple', () => {
+    const layout = computeTreeLayout(buildGraph(), 'dad')!;
+    const nodeOf = (id: string) => layout.nodes.find((node) => node.person.id === id)!;
+    // Mom sits immediately right of Dad — nothing between the couple.
+    expect(nodeOf('mom').x - nodeOf('dad').x).toBe(128 + 24);
+    // Aunt (1980, younger than Dad 1975) sits RIGHT of the couple block.
+    expect(nodeOf('aunt').x).toBeGreaterThan(nodeOf('mom').x);
+  });
+
+  it('splits siblings by age: older left, younger right of the couple', () => {
+    const graph = buildGraph();
+    graph.persons.set('bigbro', person('bigbro', 'BigBro', 1970));
+    graph.relationships.push(
+      rel('r12', 'gp1', 'bigbro', 'parent_child'),
+      rel('r13', 'gp2', 'bigbro', 'parent_child')
+    );
+    const layout = computeTreeLayout(graph, 'dad')!;
+    const nodeOf = (id: string) => layout.nodes.find((node) => node.person.id === id)!;
+    expect(nodeOf('bigbro').x).toBeLessThan(nodeOf('dad').x); // older -> left
+    expect(nodeOf('aunt').x).toBeGreaterThan(nodeOf('mom').x); // younger -> right
+    expect(nodeOf('dad').x).toBeLessThan(nodeOf('mom').x); // couple intact
+  });
+
+  it('tags nodes with variants and reports the focus center', () => {
+    const layout = computeTreeLayout(buildGraph(), 'dad')!;
+    const variantOf = (id: string) =>
+      layout.nodes.find((node) => node.person.id === id)!.variant;
+    expect(variantOf('dad')).toBe('focus');
+    expect(variantOf('mom')).toBe('partner');
+    expect(variantOf('aunt')).toBe('sibling');
+    expect(variantOf('kid')).toBe('relative');
+    const focusNode = layout.nodes.find((node) => node.isFocus)!;
+    expect(layout.focusCenter).toEqual({
+      x: focusNode.x + 128 / 2,
+      y: focusNode.y + CARD_H / 2
+    });
+  });
+
   it('does not overlap grandparent groups when both sides have parents', () => {
     const graph = buildGraph();
     graph.persons.set('gp3', person('gp3', 'Opa', 1945));

@@ -24,12 +24,16 @@ export const GAP_Y = 64;
 const COL = CARD_W + GAP_X;
 const ROW = CARD_H + GAP_Y;
 
+export type TreeNodeVariant = 'focus' | 'partner' | 'sibling' | 'relative';
+
 export type TreeNode = {
   person: VisiblePerson;
   /** Pixel position of the card's top-left corner. */
   x: number;
   y: number;
   isFocus: boolean;
+  /** Drives per-role card styling (siblings render muted). */
+  variant: TreeNodeVariant;
 };
 
 export type TreeEdge = {
@@ -49,9 +53,17 @@ export type TreeLayout = {
   edges: TreeEdge[];
   width: number;
   height: number;
+  /** Center of the focus card in px — the renderer scrolls this into view. */
+  focusCenter: {x: number; y: number};
 };
 
-type Placed = {person: VisiblePerson; col: number; row: number; isFocus?: boolean};
+type Placed = {
+  person: VisiblePerson;
+  col: number;
+  row: number;
+  isFocus?: boolean;
+  variant: TreeNodeVariant;
+};
 
 export function computeTreeLayout(
   graph: FamilyGraph,
@@ -95,22 +107,37 @@ export function computeTreeLayout(
     partnerFilter === 'current' ? currentPartners : [...currentPartners, ...endedPartners];
   const children = sortByBirth(childrenOf(graph, focusId));
 
-  // Row 2 (focus row): siblings left, focus, partners right.
+  // Row 2 (focus row): OLDER siblings left, then the couple block
+  // (focus + partners, kept adjacent so it reads as one unit), then
+  // YOUNGER siblings right. Siblings with an unknown birth date sort
+  // after known ones (see sortByBirth) and land on the younger side.
+  const birthKey = (p: VisiblePerson) =>
+    (p.birth_year ?? 9999) * 10000 + (p.birth_month ?? 0) * 100 + (p.birth_day ?? 0);
+  const focusKey = birthKey(focus);
+  const olderSiblings = siblings.filter((sibling) => birthKey(sibling) < focusKey);
+  const youngerSiblings = siblings.filter((sibling) => birthKey(sibling) >= focusKey);
+
   const focusRow: Placed[] = [];
-  siblings.forEach((person, index) => focusRow.push({person, col: index, row: 2}));
-  const focusCol = siblings.length;
-  focusRow.push({person: focus, col: focusCol, row: 2, isFocus: true});
+  olderSiblings.forEach((person, index) =>
+    focusRow.push({person, col: index, row: 2, variant: 'sibling'})
+  );
+  const focusCol = olderSiblings.length;
+  focusRow.push({person: focus, col: focusCol, row: 2, isFocus: true, variant: 'focus'});
   orderedPartners.forEach((link, index) =>
-    focusRow.push({person: link.person, col: focusCol + 1 + index, row: 2})
+    focusRow.push({person: link.person, col: focusCol + 1 + index, row: 2, variant: 'partner'})
+  );
+  const youngerStart = focusCol + 1 + orderedPartners.length;
+  youngerSiblings.forEach((person, index) =>
+    focusRow.push({person, col: youngerStart + index, row: 2, variant: 'sibling'})
   );
 
   // Row 1: parents centered over the focus.
   const parentPlacements: Placed[] = [];
   if (parents.length === 1) {
-    parentPlacements.push({person: parents[0]!, col: focusCol, row: 1});
+    parentPlacements.push({person: parents[0]!, col: focusCol, row: 1, variant: 'relative'});
   } else if (parents.length === 2) {
-    parentPlacements.push({person: parents[0]!, col: focusCol - 0.5, row: 1});
-    parentPlacements.push({person: parents[1]!, col: focusCol + 0.5, row: 1});
+    parentPlacements.push({person: parents[0]!, col: focusCol - 0.5, row: 1, variant: 'relative'});
+    parentPlacements.push({person: parents[1]!, col: focusCol + 0.5, row: 1, variant: 'relative'});
   }
 
   // Row 0: each parent's parents, centered over that parent, then swept
@@ -122,10 +149,10 @@ export function computeTreeLayout(
     if (grandparents.length === 0) continue;
     const members: Placed[] =
       grandparents.length === 1
-        ? [{person: grandparents[0]!, col: placedParent.col, row: 0}]
+        ? [{person: grandparents[0]!, col: placedParent.col, row: 0, variant: 'relative' as const}]
         : [
-            {person: grandparents[0]!, col: placedParent.col - 0.5, row: 0},
-            {person: grandparents[1]!, col: placedParent.col + 0.5, row: 0}
+            {person: grandparents[0]!, col: placedParent.col - 0.5, row: 0, variant: 'relative' as const},
+            {person: grandparents[1]!, col: placedParent.col + 0.5, row: 0, variant: 'relative' as const}
           ];
     grandGroups.push({parentId: placedParent.person.id, members});
   }
@@ -177,7 +204,7 @@ export function computeTreeLayout(
     let startCol = group.centerCol - (group.members.length - 1) / 2;
     if (startCol <= prevGroupMax) startCol = prevGroupMax + 1;
     group.members.forEach((child, index) =>
-      childPlacements.push({person: child, col: startCol + index, row: 3})
+      childPlacements.push({person: child, col: startCol + index, row: 3, variant: 'relative'})
     );
     prevGroupMax = startCol + group.members.length - 1;
   }
@@ -199,7 +226,8 @@ export function computeTreeLayout(
     person: placed.person,
     x: placed.col * COL,
     y: (rowIndex.get(placed.row) ?? 0) * ROW,
-    isFocus: Boolean(placed.isFocus)
+    isFocus: Boolean(placed.isFocus),
+    variant: placed.variant
   }));
   const nodeById = new Map(nodes.map((node) => [node.person.id, node]));
   const centerOf = (node: TreeNode) => ({x: node.x + CARD_W / 2, y: node.y + CARD_H / 2});
@@ -294,5 +322,6 @@ export function computeTreeLayout(
 
   const width = Math.max(...nodes.map((node) => node.x)) + CARD_W;
   const height = Math.max(...nodes.map((node) => node.y)) + CARD_H;
-  return {nodes, edges, width, height};
+  const focusCenter = {x: focusNode.x + CARD_W / 2, y: focusNode.y + CARD_H / 2};
+  return {nodes, edges, width, height, focusCenter};
 }

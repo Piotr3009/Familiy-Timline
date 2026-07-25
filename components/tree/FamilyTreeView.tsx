@@ -2,7 +2,8 @@ import Link from 'next/link';
 import {PersonAvatar} from '@/components/ui';
 import {personName} from '@/lib/persons/relations';
 import {lifeSpan} from '@/lib/dates';
-import {CARD_H, CARD_W, type TreeLayout} from '@/lib/tree';
+import {CARD_H, CARD_W, type TreeLayout, type TreeNodeVariant} from '@/lib/tree';
+import {TreeScroller} from '@/components/tree/TreeScroller';
 
 /**
  * Server-rendered tree: absolutely-positioned cards over an SVG edge
@@ -19,8 +20,19 @@ export function FamilyTreeView({
   /** Formats the end-year annotation on dashed partner lines. */
   endedYearLabel?: (year: number) => string;
 }) {
+  // Siblings render muted so the couple block reads as the visual core.
+  const cardClass: Record<TreeNodeVariant, string> = {
+    focus: 'border-amber ring-1 ring-amber bg-surface-raised',
+    partner: 'border-border bg-surface-raised',
+    sibling: 'border-border/70 bg-surface opacity-85',
+    relative: 'border-border bg-surface-raised'
+  };
   return (
-    <div className="overflow-auto rounded-card border border-border bg-surface-raised p-6">
+    <TreeScroller
+      focusX={layout.focusCenter.x}
+      focusY={layout.focusCenter.y}
+      className="overflow-auto rounded-card border border-border bg-surface-raised p-6"
+    >
       <div
         className="relative mx-auto"
         style={{width: layout.width, height: layout.height}}
@@ -61,9 +73,7 @@ export function FamilyTreeView({
           <Link
             key={node.person.id}
             href={`/people/${node.person.id}`}
-            className={`absolute flex flex-col items-center gap-1.5 rounded-xl border bg-surface-raised p-3 text-center shadow-sm transition-shadow hover:shadow-md ${
-              node.isFocus ? 'border-amber ring-1 ring-amber' : 'border-border'
-            }`}
+            className={`absolute flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center shadow-sm transition-shadow hover:shadow-md ${cardClass[node.variant]}`}
             style={{left: node.x, top: node.y, width: CARD_W, height: CARD_H}}
           >
             <PersonAvatar
@@ -93,6 +103,6 @@ export function FamilyTreeView({
           </Link>
         ))}
       </div>
-    </div>
+    </TreeScroller>
   );
 }
