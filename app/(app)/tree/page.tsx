@@ -3,7 +3,7 @@ import {getTranslations} from 'next-intl/server';
 import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {getFamilyContext} from '@/lib/family';
-import {childrenOf, loadFamilyGraph, parentsOf, partnersOf, personName, sortByBirth} from '@/lib/persons/relations';
+import {loadFamilyGraph, personName, sortByBirth} from '@/lib/persons/relations';
 import {computeTreeLayout, type TreeGenerations, type TreePartnerFilter} from '@/lib/tree';
 import {createSignedUrls} from '@/lib/media';
 import {setTreePartnerFilterAction} from '@/lib/settings/actions';
@@ -11,8 +11,6 @@ import {Button, EmptyState, cx} from '@/components/ui';
 import {FamilyTreeView} from '@/components/tree/FamilyTreeView';
 import {TreeFocusPicker} from '@/components/tree/TreeFocusPicker';
 import {TreeGenerationsPicker} from '@/components/tree/TreeGenerationsPicker';
-import {TreeSidePanel} from '@/components/tree/TreeSidePanel';
-import {CURRENT_PARTNER_STATUSES} from '@/lib/persons/relations';
 
 function isPartnerFilter(value: string | undefined): value is TreePartnerFilter {
   return value === 'all' || value === 'current';
@@ -77,68 +75,11 @@ export default async function TreePage({
     name: personName(person)
   }));
 
-  // Side-panel data + family stats for the hero strip.
-  const focusParents = sortByBirth(parentsOf(graph, focusId));
-  const focusSpouse =
-    partnersOf(graph, focusId).find((link) =>
-      (CURRENT_PARTNER_STATUSES as readonly string[]).includes(link.relationship.status ?? '')
-    )?.person ?? null;
-  const focusChildren = sortByBirth(childrenOf(graph, focusId));
-  const focusAvatarUrl = focusPerson.avatar_url
-    ? (avatarUrls.get(focusPerson.avatar_url) ?? null)
-    : null;
-  const [{count: photosCount}, {count: eventsCount}] = await Promise.all([
-    supabase
-      .from('photos')
-      .select('id', {count: 'exact', head: true})
-      .eq('family_id', ctx.family.id),
-    supabase
-      .from('events')
-      .select('id', {count: 'exact', head: true})
-      .eq('family_id', ctx.family.id)
-  ]);
-  const stats = [
-    {value: graph.persons.size, label: t('tree.statsMembers')},
-    {value: photosCount ?? 0, label: t('tree.statsPhotos')},
-    {value: eventsCount ?? 0, label: t('tree.statsEvents')}
-  ];
 
-  const statIcons = ['👤', '🖼️', '📅'];
   return (
-    <div className="relative left-1/2 w-screen max-w-[1440px] -translate-x-1/2 space-y-5 px-4 sm:px-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="shrink-0 space-y-4 lg:w-64">
-          <div className="space-y-2">
-            <h1 className="font-heading text-4xl leading-tight text-ink">
-              {t('tree.heroTitle1')}
-              <br />
-              <span className="text-amber">{t('tree.heroTitle2')}</span>
-            </h1>
-            <p className="text-sm text-ink-muted">{t('tree.heroTagline')}</p>
-            <Link
-              href={`/people/${focusId}`}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-strong"
-            >
-              <span aria-hidden>+</span> {t('tree.addMember')}
-            </Link>
-          </div>
-          <div className="hidden w-44 space-y-3 rounded-card border border-border bg-surface-raised/90 p-4 shadow-sm lg:block">
-            {stats.map((stat, index) => (
-              <div key={stat.label} className="flex items-center gap-3">
-                <span aria-hidden className="text-lg">
-                  {statIcons[index]}
-                </span>
-                <div>
-                  <p className="font-heading text-lg leading-none text-ink">{stat.value}</p>
-                  <p className="text-xs text-ink-muted">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="min-w-0 flex-1 space-y-3">
+    <div className="relative left-1/2 w-screen max-w-[1800px] -translate-x-1/2 space-y-4 px-4 sm:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="sr-only">{t('tree.title')}</h2>
+        <h1 className="font-heading text-2xl">{t('tree.title')}</h1>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <form action={setTreePartnerFilterAction} className="flex items-center gap-1">
             <input type="hidden" name="focus" value={focusId} />
@@ -195,16 +136,6 @@ export default async function TreePage({
           </p>
         </div>
       ) : null}
-        </div>
-        <TreeSidePanel
-          person={focusPerson}
-          avatarUrl={focusAvatarUrl}
-          parents={focusParents}
-          spouse={focusSpouse}
-          childList={focusChildren}
-          isYou={ctx.person?.id === focusId}
-        />
-      </div>
     </div>
   );
 }

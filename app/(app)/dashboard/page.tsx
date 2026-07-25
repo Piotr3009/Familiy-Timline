@@ -21,6 +21,8 @@ import {loadFeed} from '@/lib/feed/load';
 import {Card} from '@/components/ui';
 import {FamilyTreeView} from '@/components/tree/FamilyTreeView';
 import {FeedList} from '@/components/feed/FeedList';
+import {TreeSidePanel} from '@/components/tree/TreeSidePanel';
+import {CURRENT_PARTNER_STATUSES, sortByBirth} from '@/lib/persons/relations';
 import {PendingClaims, type PendingClaim} from '@/components/invite/PendingClaims';
 
 const CELEBRATION_WINDOW_DAYS = 30;
@@ -167,11 +169,74 @@ export default async function DashboardPage({
         new Date()
       );
 
+  // Home is the personal hub: hero + family stats on the left, my
+  // profile panel on the right (the tree page stays a pure tree).
+  const [{count: photosCount}, {count: eventsCount}] = await Promise.all([
+    supabase
+      .from('photos')
+      .select('id', {count: 'exact', head: true})
+      .eq('family_id', ctx.family.id),
+    supabase
+      .from('events')
+      .select('id', {count: 'exact', head: true})
+      .eq('family_id', ctx.family.id)
+  ]);
+  const stats = [
+    {icon: '👤', value: graph.persons.size, label: t('tree.statsMembers')},
+    {icon: '🖼️', value: photosCount ?? 0, label: t('tree.statsPhotos')},
+    {icon: '📅', value: eventsCount ?? 0, label: t('tree.statsEvents')}
+  ];
+  const me = ctx.person && graph.persons.has(ctx.person.id) ? graph.persons.get(ctx.person.id)! : null;
+  const myParents = me ? sortByBirth(parentsOf(graph, me.id)) : [];
+  const mySpouse = me
+    ? (partnersOf(graph, me.id).find((link) =>
+        (CURRENT_PARTNER_STATUSES as readonly string[]).includes(link.relationship.status ?? '')
+      )?.person ?? null)
+    : null;
+  const myChildren = me ? sortByBirth(childrenOf(graph, me.id)) : [];
+  let myAvatarUrl: string | null = null;
+  if (me?.avatar_url) {
+    const urls = await createSignedUrls(supabase, 'avatars', [me.avatar_url]);
+    myAvatarUrl = urls.get(me.avatar_url) ?? null;
+  }
+
   return (
-    <div className="space-y-5">
-      <h1 className="font-heading text-2xl">
+    <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <div className="shrink-0 space-y-4 xl:w-60">
+        <div className="space-y-2">
+          <h1 className="font-heading text-4xl leading-tight text-ink">
+            {t('tree.heroTitle1')}
+            <br />
+            <span className="text-amber">{t('tree.heroTitle2')}</span>
+          </h1>
+          <p className="text-sm text-ink-muted">{t('tree.heroTagline')}</p>
+          {me ? (
+            <Link
+              href={`/people/${me.id}`}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-strong"
+            >
+              <span aria-hidden>+</span> {t('tree.addMember')}
+            </Link>
+          ) : null}
+        </div>
+        <div className="w-48 space-y-3 rounded-card border border-border bg-surface-raised/90 p-4 shadow-sm">
+          {stats.map((stat) => (
+            <div key={stat.label} className="flex items-center gap-3">
+              <span aria-hidden className="text-lg">
+                {stat.icon}
+              </span>
+              <div>
+                <p className="font-heading text-lg leading-none text-ink">{stat.value}</p>
+                <p className="text-xs text-ink-muted">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="min-w-0 flex-1 space-y-5">
+      <h2 className="font-heading text-2xl">
         {t('dashboard.greeting', {name: ctx.person?.first_name ?? ''})}
-      </h1>
+      </h2>
 
       {showTakeoverReview ? (
         <div className="rounded-lg border border-amber/30 bg-amber-soft px-4 py-3 text-sm text-amber-strong">
@@ -247,6 +312,17 @@ export default async function DashboardPage({
           />
         </Card>
       </div>
+      </div>
+      {me ? (
+        <TreeSidePanel
+          person={me}
+          avatarUrl={myAvatarUrl}
+          parents={myParents}
+          spouse={mySpouse}
+          childList={myChildren}
+          isYou
+        />
+      ) : null}
     </div>
   );
 }

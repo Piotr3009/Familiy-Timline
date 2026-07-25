@@ -34,10 +34,19 @@ export function TreeScroller({
 
   useEffect(() => {
     const el = ref.current;
-    if (el) center(el, zoom);
+    if (!el) return;
+    // Auto-fit on mount: wide trees start scaled to the viewport width
+    // ("automatic zoom for every screen"), never scaled up past 100%.
+    const available = el.clientWidth - 48;
+    const initial =
+      contentWidth > available
+        ? Math.max(0.4, Math.round((available / contentWidth) * 10) / 10)
+        : 1;
+    setZoom(initial);
+    requestAnimationFrame(() => center(el, initial));
     // Re-center only when the focus moves, not on every zoom tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusX, focusY]);
+  }, [focusX, focusY, contentWidth]);
 
   const applyZoom = (next: number) => {
     const clamped = Math.min(1.4, Math.max(0.4, Math.round(next * 10) / 10));

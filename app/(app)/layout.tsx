@@ -24,7 +24,7 @@ export default async function AppLayout({children}: {children: React.ReactNode})
     <div className="min-h-dvh pb-20 sm:pb-0">
       <BackgroundDecor />
       <header className="sticky top-0 z-30 border-b border-border bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
           <Link href="/dashboard" className="min-w-0">
             <span className="font-heading block truncate text-lg font-semibold italic text-amber sm:text-xl">
               {ctx.family.name}
@@ -51,7 +51,7 @@ export default async function AppLayout({children}: {children: React.ReactNode})
           </div>
         </div>
       </header>
-      <main className="app-content mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
+      <main className="app-content mx-auto w-full max-w-7xl px-4 py-6">{children}</main>
     </div>
   );
 }
