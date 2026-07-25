@@ -204,7 +204,7 @@ export default async function DashboardPage({
     <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
       <div className="shrink-0 space-y-4 xl:w-60">
         <div className="space-y-2">
-          <h1 className="font-heading text-4xl leading-[1.03] tracking-[-1.8px] text-ink xl:text-[55px]">
+          <h1 className="font-heading text-4xl leading-tight text-ink">
             {t('tree.heroTitle1')}
             <br />
             <span className="text-amber">{t('tree.heroTitle2')}</span>
