@@ -3,6 +3,35 @@ import {PersonAvatar} from '@/components/ui';
 import {personName} from '@/lib/persons/relations';
 import {lifeSpan} from '@/lib/dates';
 import {CARD_H, CARD_W, type TreeLayout, type TreeNodeVariant} from '@/lib/tree';
+
+/**
+ * Converts an elbow polyline into an SVG path with rounded corners
+ * (radius r), matching the soft joins in the approved artwork.
+ */
+function roundedPath(points: {x: number; y: number}[], r = 9): string {
+  if (points.length < 2) return '';
+  let d = `M ${points[0]!.x} ${points[0]!.y}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1]!;
+    const corner = points[i]!;
+    const next = points[i + 1]!;
+    const inLen = Math.hypot(corner.x - prev.x, corner.y - prev.y);
+    const outLen = Math.hypot(next.x - corner.x, next.y - corner.y);
+    const radius = Math.min(r, inLen / 2, outLen / 2);
+    if (radius < 1) {
+      d += ` L ${corner.x} ${corner.y}`;
+      continue;
+    }
+    const inX = corner.x - ((corner.x - prev.x) / inLen) * radius;
+    const inY = corner.y - ((corner.y - prev.y) / inLen) * radius;
+    const outX = corner.x + ((next.x - corner.x) / outLen) * radius;
+    const outY = corner.y + ((next.y - corner.y) / outLen) * radius;
+    d += ` L ${inX} ${inY} Q ${corner.x} ${corner.y} ${outX} ${outY}`;
+  }
+  const last = points[points.length - 1]!;
+  d += ` L ${last.x} ${last.y}`;
+  return d;
+}
 import {TreeScroller} from '@/components/tree/TreeScroller';
 
 /**
@@ -28,10 +57,11 @@ export function FamilyTreeView({
 }) {
   // Siblings render muted so the couple block reads as the visual core.
   const cardClass: Record<TreeNodeVariant, string> = {
-    focus: 'border-amber ring-2 ring-amber/70 bg-surface-raised shadow-lg',
-    partner: 'border-border bg-surface-raised shadow-sm',
-    sibling: 'border-border bg-surface-raised/90 shadow-sm',
-    relative: 'border-border bg-surface-raised shadow-sm'
+    focus:
+      'border-[1.5px] border-amber bg-surface-raised shadow-[0_8px_20px_rgba(120,80,30,0.14)]',
+    partner: 'border-border bg-surface-raised shadow-[0_5px_14px_rgba(120,80,30,0.08)]',
+    sibling: 'border-border bg-surface-raised shadow-[0_5px_14px_rgba(120,80,30,0.08)]',
+    relative: 'border-border bg-surface-raised shadow-[0_5px_14px_rgba(120,80,30,0.08)]'
   };
   return (
     <TreeScroller
@@ -83,15 +113,19 @@ export function FamilyTreeView({
           <Link
             key={node.person.id}
             href={`/people/${node.person.id}`}
-            className={`absolute flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center shadow-sm transition-shadow hover:shadow-md ${cardClass[node.variant]}`}
+            className={`absolute flex flex-col items-center gap-0.5 rounded-2xl border px-2 pb-3 pt-3 text-center transition-shadow hover:shadow-lg ${cardClass[node.variant]}`}
             style={{left: node.x, top: node.y, width: CARD_W, height: CARD_H}}
           >
             {node.isFocus && youLabel ? (
-              <span className="absolute -top-2.5 rounded-full bg-amber px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm">
+              <span className="absolute -top-2 right-2 rounded-full bg-amber px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm">
                 {youLabel}
               </span>
             ) : null}
-            <span className="rounded-full bg-surface-raised p-0.5 shadow ring-1 ring-border">
+            <span
+              className={`relative overflow-visible rounded-full ${
+                node.isFocus ? 'ring-2 ring-amber ring-offset-2 ring-offset-surface-raised' : ''
+              }`}
+            >
               <PersonAvatar
                 name={personName(node.person)}
                 src={node.person.avatar_url ? avatarUrls.get(node.person.avatar_url) : null}
@@ -99,8 +133,10 @@ export function FamilyTreeView({
                 deceased={node.person.is_deceased}
               />
             </span>
-            <span className="font-heading line-clamp-2 text-sm leading-tight text-ink">
-              {personName(node.person)}
+            <span className="mt-1.5 text-[13px] font-medium leading-[1.15] text-ink">
+              {node.person.first_name}
+              <br />
+              {node.person.last_name}
             </span>
             <span className="text-xs text-ink-faint">
               {lifeSpan(

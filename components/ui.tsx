@@ -143,7 +143,7 @@ export function EmptyState({
 const AVATAR_SIZES = {
   sm: 'h-8 w-8 text-xs',
   md: 'h-11 w-11 text-sm',
-  tree: 'h-14 w-14 text-base',
+  tree: 'h-[76px] w-[76px] text-xl',
   lg: 'h-20 w-20 text-xl'
 } as const;
 

@@ -19,7 +19,7 @@ import {
 export type TreeGenerations = 3 | 4 | 5;
 
 export const CARD_W = 128;
-export const CARD_H = 148;
+export const CARD_H = 176;
 export const GAP_X = 24;
 export const GAP_Y = 64;
 
