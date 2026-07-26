@@ -19,7 +19,9 @@ import {
 export type TreeGenerations = 3 | 4 | 5;
 
 export const CARD_W = 128;
-export const CARD_H = 176;
+export const CARD_H = 148;
+/** Siblings sit half a tile higher than the focus couple (variant B). */
+export const SIBLING_RAISE = 56;
 export const GAP_X = 24;
 export const GAP_Y = 64;
 
@@ -42,6 +44,8 @@ export type TreeEdge = {
   /** Poly-line points in px. */
   points: Array<{x: number; y: number}>;
   dashed: boolean;
+  /** Render as a soft 45-degree branch curve (junction -> sibling). */
+  curved?: boolean;
   /** Ending year of an ended partner relationship (shown on the line). */
   endYear?: number | null;
   /** Anchor for the endYear label, px. */
@@ -256,6 +260,9 @@ export function computeTreeLayout(
     isFocus: Boolean(placed.isFocus),
     variant: placed.variant
   }));
+  for (const node of nodes) {
+    if (node.variant === 'sibling') node.y -= SIBLING_RAISE;
+  }
   const nodeById = new Map(nodes.map((node) => [node.person.id, node]));
   const centerOf = (node: TreeNode) => ({x: node.x + CARD_W / 2, y: node.y + CARD_H / 2});
 
@@ -326,12 +333,36 @@ export function computeTreeLayout(
     .filter((node): node is TreeNode => Boolean(node));
   if (parentNodes.length > 0) {
     const parentIds = new Set(parentPlacements.map((placed) => placed.person.id));
-    drawParentDrop(parentNodes, focusNode);
+    const junctionX =
+      parentNodes.reduce((sum, node) => sum + centerOf(node).x, 0) / parentNodes.length;
+    const parentsBottom = parentNodes[0]!.y + CARD_H;
+    const junctionY = parentsBottom + 30;
+    const focusCenterX = centerOf(focusNode).x;
+    // Trunk: parents -> junction -> focus (straight down).
+    edges.push({
+      dashed: false,
+      points: [
+        {x: junctionX, y: parentsBottom},
+        {x: junctionX, y: junctionY},
+        {x: focusCenterX, y: junctionY},
+        {x: focusCenterX, y: focusNode.y}
+      ]
+    });
+    // Branches: junction -> each sibling as a soft 45-degree curve.
     for (const sibling of siblings) {
       const siblingParents = parentsOf(graph, sibling.id);
       if (!siblingParents.some((parent) => parentIds.has(parent.id))) continue;
       const siblingNode = nodeById.get(sibling.id);
-      if (siblingNode) drawParentDrop(parentNodes, siblingNode);
+      if (!siblingNode) continue;
+      const siblingCenter = centerOf(siblingNode);
+      edges.push({
+        dashed: false,
+        curved: true,
+        points: [
+          {x: junctionX, y: junctionY},
+          {x: siblingCenter.x, y: siblingNode.y}
+        ]
+      });
     }
   }
 

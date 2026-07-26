@@ -133,7 +133,7 @@ export function FamilyTreeView({
                 deceased={node.person.is_deceased}
               />
             </span>
-            <span className="mt-1.5 text-[13px] font-medium leading-[1.15] text-ink">
+            <span className="mt-1.5 text-sm font-semibold leading-[1.15] tracking-tight text-ink">
               {node.person.first_name}
               <br />
               {node.person.last_name}

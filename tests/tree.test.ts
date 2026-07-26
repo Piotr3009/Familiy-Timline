@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {computeTreeLayout, CARD_H} from '@/lib/tree';
+import {computeTreeLayout, CARD_H, SIBLING_RAISE} from '@/lib/tree';
 import type {FamilyGraph} from '@/lib/persons/relations';
 import type {Relationship, VisiblePerson} from '@/lib/database.types';
 
@@ -93,7 +93,8 @@ describe('computeTreeLayout', () => {
     expect(rowOf('gp1')).toBe(rowOf('gp2'));
     expect(rowOf('gp1')).toBeLessThan(rowOf('dad'));
     expect(rowOf('dad')).toBe(rowOf('mom'));
-    expect(rowOf('dad')).toBe(rowOf('aunt')); // sibling shares the focus row
+    // Variant B: siblings sit half a tile HIGHER than the focus couple.
+    expect(rowOf('aunt')).toBe(rowOf('dad') - SIBLING_RAISE);
     expect(rowOf('kid')).toBeGreaterThan(rowOf('dad'));
     expect(layout.nodes.find((node) => node.person.id === 'dad')!.isFocus).toBe(true);
   });
@@ -168,7 +169,9 @@ describe('computeTreeLayout', () => {
     const momCards = layout.nodes.filter((node) => node.person.id === 'mom');
     expect(momCards).toHaveLength(1);
     // The current (married) record wins: solid line, no end-year label.
-    const partnerEdges = layout.edges.filter((edge) => edge.points.length === 2);
+    const partnerEdges = layout.edges.filter(
+      (edge) => edge.points.length === 2 && !edge.curved
+    );
     expect(partnerEdges).toHaveLength(1);
     expect(partnerEdges[0]!.dashed).toBe(false);
     expect(partnerEdges[0]!.endYear ?? null).toBeNull();
@@ -234,8 +237,9 @@ describe('computeTreeLayout', () => {
     graph.relationships.push(rel('r14', 'kid', 'gkid', 'parent_child'));
 
     const three = computeTreeLayout(graph, 'dad', {generations: 3})!;
+    // 3 generation levels + the raised sibling band = 4 distinct y values.
     const rowCount = new Set(three.nodes.map((node) => node.y)).size;
-    expect(rowCount).toBe(3);
+    expect(rowCount).toBe(4);
     expect(three.nodes.some((node) => node.person.id === 'gkid')).toBe(false);
 
     const four = computeTreeLayout(graph, 'dad', {generations: 5})!;
